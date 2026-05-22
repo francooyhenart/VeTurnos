@@ -37,7 +37,7 @@ public abstract class Usuario {
         if (nombreCompleto == null || nombreCompleto.trim().isEmpty()) {
             throw new IllegalArgumentException("El nombre completo es obligatorio");
         }
-        if (dni == null || !dni.matches("\\d{7,8}")) { // Valida formato de 7 u 8 dígitos (US-01 AC 03)
+        if (dni == null || !dni.matches("\\d{7,8}")) {
             throw new IllegalArgumentException("El DNI debe tener 7 u 8 dígitos numéricos");
         }
         if (email == null || !email.contains("@")) {
