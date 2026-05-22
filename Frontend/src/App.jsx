@@ -3,6 +3,7 @@ import Login from "./pages/Login";
 import Registro from "./pages/Registro";
 import { MisTurnos } from "./pages/MisTurnos";
 import NuevoTurno from "./pages/NuevoTurno";
+import CargarMascota from "./pages/CargarMascota"; // 1. Importamos la nueva pantalla clínica
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           {/* RUTAS PRIVADAS */}
           <Route path="/mis-turnos" element={<MisTurnos />} />
           <Route path="/nuevo-turno" element={<NuevoTurno />} />
+          <Route path="/cargar-mascota" element={<CargarMascota />} /> {/* 2. Registramos la ruta para las mascotas */}
 
           {/* Redirección por cualquier ruta inexistente */}
           <Route path="*" element={<Navigate to="/login" />} />
