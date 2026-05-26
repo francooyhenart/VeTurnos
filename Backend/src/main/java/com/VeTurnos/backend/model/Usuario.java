@@ -1,3 +1,5 @@
+// Usuario.java
+
 package com.veturnos.backend.model;
 
 import com.veturnos.backend.enums.Rol;
@@ -37,7 +39,7 @@ public abstract class Usuario {
         if (nombreCompleto == null || nombreCompleto.trim().isEmpty()) {
             throw new IllegalArgumentException("El nombre completo es obligatorio");
         }
-        if (dni == null || !dni.matches("\\d{7,8}")) { // Valida formato de 7 u 8 dígitos (US-01 AC 03)
+        if (dni == null || !dni.matches("\\d{7,8}")) { // Valida formato de 7 u 8 dígitos
             throw new IllegalArgumentException("El DNI debe tener 7 u 8 dígitos numéricos");
         }
         if (email == null || !email.contains("@")) {
@@ -58,7 +60,7 @@ public abstract class Usuario {
         this.rol = rol;
     }
 
-    // Getters y Setters
+// Getters y Setters
     public Long getId() { return id; }
     public String getNombreCompleto() { return nombreCompleto; }
     public String getDni() { return dni; }
@@ -66,4 +68,4 @@ public abstract class Usuario {
     public String getEmail() { return email; }
     public String getPassword() { return password; }
     public Rol getRol() { return rol; }
-}
+} 

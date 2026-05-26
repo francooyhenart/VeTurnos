@@ -1,3 +1,5 @@
+// Cliente.java
+
 package com.veturnos.backend.model;
 
 import com.veturnos.backend.enums.Rol;
@@ -29,4 +31,4 @@ public class Cliente extends Usuario {
         this.mascotas.add(mascota);
         mascota.setDueño(this);
     }
-}
+} 

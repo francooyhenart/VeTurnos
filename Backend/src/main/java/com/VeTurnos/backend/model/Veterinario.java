@@ -1,3 +1,5 @@
+// Veterinario.java (Cumple rol de Admin y Profesional único para la Entrega 1)
+
 package com.veturnos.backend.model;
 
 import com.veturnos.backend.enums.Rol;
@@ -33,8 +35,8 @@ public class Veterinario extends Usuario {
         this.esAdministrador = esAdministrador != null ? esAdministrador : false;
     }
 
-    // Getters y Setters
+// Getters y Setters
     public String getMatricula() { return matricula; }
     public String getEspecialidad() { return especialidad; }
     public Boolean getEsAdministrador() { return esAdministrador; }
-}
+} 

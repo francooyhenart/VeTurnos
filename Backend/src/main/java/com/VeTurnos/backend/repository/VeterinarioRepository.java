@@ -1,3 +1,5 @@
+// VeterinarioRepository.java
+
 package com.veturnos.backend.repository;
 
 import com.veturnos.backend.model.Veterinario;
@@ -6,4 +8,4 @@ import java.util.Optional;
 
 public interface VeterinarioRepository extends JpaRepository<Veterinario, Long> {
     Optional<Veterinario> findByMatricula(String matricula);
-}
+} 
