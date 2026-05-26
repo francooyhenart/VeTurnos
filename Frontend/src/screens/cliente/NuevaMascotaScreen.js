@@ -1,4 +1,3 @@
-// src/screens/cliente/NuevaMascotaScreen.js
 import React, { useState } from 'react';
 import {
   View,
@@ -69,7 +68,9 @@ const NuevaMascotaScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={estilos.safeArea}>
-      <EncabezadoPersonalizado onVolver={() => navigation.goBack()} titulo="" />
+      {/* 🚀 Encabezado unificado con el fondo oscuro */}
+      <EncabezadoPersonalizado onVolver={() => navigation.goBack()} titulo="" estilo={estilos.encabezadoOscuro} />
+      
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -108,11 +109,12 @@ const NuevaMascotaScreen = ({ navigation }) => {
 
             {!!errorGeneral && <AlertaError mensaje={errorGeneral} />}
 
+            {/* 🚀 BOTÓN GUARDAR VERDE PASTEL DEL FIGMA */}
             <BotonPrimario
               titulo="Guardar"
               onPress={manejarGuardar}
               cargando={cargando}
-              estilo={{ marginTop: SPACING.lg }}
+              estilo={estilos.botonGuardar}
             />
           </View>
         </ScrollView>
@@ -121,10 +123,16 @@ const NuevaMascotaScreen = ({ navigation }) => {
   );
 };
 
+// ════════════════════════════════════════════
+//  ESTILOS CORREGIDOS CON LA PALETA FIGMA B3
+// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#143343', // 🎨 Fondo Azul Petróleo Oscuro
+  },
+  encabezadoOscuro: {
+    backgroundColor: '#143343', // 🎨 Fondo de la barra superior oscuro
   },
   scroll: {
     paddingHorizontal: SPACING.xl,
@@ -134,12 +142,16 @@ const estilos = StyleSheet.create({
   titulo: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: '#FFFFFF', // 🎨 Letras blancas para el título
     textAlign: 'center',
     marginVertical: SPACING.xl,
   },
   formulario: {
     gap: SPACING.sm,
+  },
+  botonGuardar: {
+    backgroundColor: '#90C7A1', // 🎨 Botón Verde Pastel del Figma
+    marginTop: SPACING.lg,
   },
 });
 

@@ -1,4 +1,3 @@
-// src/screens/cliente/MascotasScreen.js
 import React, { useEffect } from 'react';
 import {
   View,
@@ -19,6 +18,7 @@ import {
 import { COLORS, FONT_SIZE, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants';
 
 const ItemMascota = ({ mascota, onPress }) => (
+  /* 🚀 Ahora que corregimos la Tarjeta, este estilo verde va a pisar al blanco base */
   <Tarjeta onPress={onPress} estilo={estilos.itemMascota}>
     <View style={estilos.itemMascotaContenido}>
       <View style={estilos.iconoMascota}>
@@ -94,13 +94,16 @@ const MascotasScreen = ({ navigation }) => {
   );
 };
 
+// ════════════════════════════════════════════
+//  ESTILOS TUNEADOS CON LOS COLORES DEL FIGMA
+// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#143343', // 🎨 Fondo Azul Petróleo (B2 - Figma)
   },
   encabezado: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: '#143343', // 🎨 Unificado con el fondo oscuro
     paddingHorizontal: SPACING.md,
     paddingTop: SPACING.xl,
     paddingBottom: SPACING.md,
@@ -114,7 +117,7 @@ const estilos = StyleSheet.create({
   },
   flechaTexto: {
     fontSize: FONT_SIZE.xl,
-    color: COLORS.textPrimary,
+    color: '#FFFFFF', // 🎨 Flecha blanca para contrastar
   },
   tituloContenedor: {
     paddingHorizontal: SPACING.lg,
@@ -123,7 +126,7 @@ const estilos = StyleSheet.create({
   titulo: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: '#FFFFFF', // 🎨 Título en blanco impecable
     textAlign: 'center',
   },
   lista: {
@@ -133,6 +136,8 @@ const estilos = StyleSheet.create({
   },
   itemMascota: {
     marginBottom: 0,
+    backgroundColor: '#90C7A1', // 🎨 Tarjeta Verde Pastel
+    borderRadius: 12,
   },
   itemMascotaContenido: {
     flexDirection: 'row',
@@ -143,7 +148,7 @@ const estilos = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#FFFFFF', // 🎨 Círculo blanco del avatar
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -155,13 +160,14 @@ const estilos = StyleSheet.create({
   },
   nombreMascota: {
     fontSize: FONT_SIZE.md,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontWeight: '700',
+    color: '#1F1F1F', // 🎨 Texto oscuro sobre fondo claro
   },
   detalleMascota: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    color: '#3A4D40', // 🎨 Subtítulo verde oscuro
     marginTop: 2,
+    fontWeight: '500',
   },
   fab: {
     position: 'absolute',
@@ -170,16 +176,16 @@ const estilos = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#90C7A1', // 🎨 Botón flotante Verde Pastel
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.md,
   },
   fabTexto: {
-    fontSize: 28,
-    color: COLORS.textInverse,
-    fontWeight: '300',
-    lineHeight: 32,
+    fontSize: 32,
+    color: '#143343', // 🎨 Signo "+" oscuro del color del fondo
+    fontWeight: 'bold',
+    lineHeight: 34,
   },
 });
 

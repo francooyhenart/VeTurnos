@@ -1,4 +1,3 @@
-// src/screens/admin/CrearTurnoAdminScreen.js
 import React, { useState } from 'react';
 import {
     View,
@@ -74,69 +73,72 @@ const CrearTurnoAdminScreen = ({ navigation }) => {
         } catch (e) {
             setError(e.message || 'Ocurrió un error al guardar el turno.');
         } finally {
-            setCargando(false);
+            新生= setCargando(false);
         }
     };
 
     return (
         <SafeAreaView style={estilos.safeArea}>
-        <EncabezadoPersonalizado onVolver={() => navigation.goBack()} titulo="" />
+        {/* 🚀 Encabezado unificado con el fondo oscuro */}
+        <EncabezadoPersonalizado onVolver={() => navigation.goBack()} titulo="" estilo={estilos.encabezadoOscuro} />
+        
         <ScrollView contentContainerStyle={estilos.scroll} keyboardShouldPersistTaps="handled">
             <Text style={estilos.titulo}>Cargar Turno (Mostrador)</Text>
 
             <CampoTexto
-            placeholder="ID del Cliente"
-            valor={clienteId}
-            alCambiar={setClienteId}
-            teclado="numeric"
+                placeholder="ID del Cliente"
+                valor={clienteId}
+                alCambiar={setClienteId}
+                teclado="numeric"
             />
 
             <CampoTexto
-            placeholder="ID de la Mascota"
-            valor={mascotaId}
-            alCambiar={setMascotaId}
-            teclado="numeric"
+                placeholder="ID de la Mascota"
+                valor={mascotaId}
+                alCambiar={setMascotaId}
+                teclado="numeric"
             />
 
             <CampoTexto
-            placeholder="Fecha (YYYY-MM-DD)"
-            valor={fechaStr}
-            alCambiar={setFechaStr}
+                placeholder="Fecha (YYYY-MM-DD)"
+                valor={fechaStr}
+                alCambiar={setFechaStr}
             />
 
             <SelectorCampo
-            placeholder="Motivo del Turno"
-            valor={motivo}
-            alCambiar={setMotivo}
-            opciones={MOTIVOS}
-            estilo={{ marginBottom: SPACING.sm }}
+                placeholder="Motivo del Turno"
+                valor={motivo}
+                alCambiar={setMotivo}
+                opciones={MOTIVOS}
+                estilo={{ marginBottom: SPACING.sm }}
             />
 
             {motivo === 'Cirugia' && (
-            <SelectorCampo
-                placeholder="Duración estimada"
-                valor={duracionMinutos}
-                alCambiar={setDuracionMinutos}
-                opciones={DURACIONES_CIRUGIA}
-                estilo={{ marginBottom: SPACING.sm }}
-            />
+                <SelectorCampo
+                    placeholder="Duración estimada"
+                    valor={duracionMinutos}
+                    alCambiar={setDuracionMinutos}
+                    opciones={DURACIONES_CIRUGIA}
+                    estilo={{ marginBottom: SPACING.sm }}
+                />
             )}
 
             <SelectorCampo
-            placeholder="Horario de Inicio"
-            valor={horario}
-            alCambiar={setHorario}
-            opciones={HORARIOS_DISPONIBLES.map(h => ({ label: h, value: h }))}
-            estilo={{ marginBottom: SPACING.md }}
+                placeholder="Horario de Inicio"
+                valor={horario}
+                alCambiar={setHorario}
+                opciones={HORARIOS_DISPONIBLES.map(h => ({ label: h, value: h }))}
+                estilo={{ marginBottom: SPACING.md }}
             />
 
             {!!error && <AlertaError mensaje={error} estilo={{ marginTop: SPACING.md }} />}
 
+            {/* 🚀 BOTÓN PRINCIPAL EN VERDE PASTEL DEL FIGMA */}
             <BotonPrimario
-            titulo={motivo === 'Cirugia' ? "Bloquear Quirófano" : "Agendar Turno"}
-            onPress={manejarGuardarTurno}
-            cargando={cargando}
-            estilo={{ marginTop: SPACING.lg }}
+                titulo={motivo === 'Cirugia' ? "Bloquear Quirófano" : "Agendar Turno"}
+                onPress={manejarGuardarTurno}
+                cargando={cargando}
+                estilo={estilos.botonAgendar}
             />
         </ScrollView>
 
@@ -153,16 +155,31 @@ const CrearTurnoAdminScreen = ({ navigation }) => {
     );
 };
 
+// ════════════════════════════════════════════
+//  ESTILOS CORREGIDOS CON LA PALETA FIGMA
+// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: COLORS.background },
-    scroll: { padding: SPACING.lg },
+    safeArea: { 
+        flex: 1, 
+        backgroundColor: '#143343' // 🎨 Fondo Azul Petróleo Oscuro general
+    },
+    encabezadoOscuro: {
+        backgroundColor: '#143343', // Fondo de la barra superior oscuro
+    },
+    scroll: { 
+        padding: SPACING.lg 
+    },
     titulo: {
         fontSize: FONT_SIZE.xxl,
         fontWeight: '700',
-        color: COLORS.textPrimary,
+        color: '#FFFFFF', // 🎨 Letras blancas para el título central
         textAlign: 'center',
         marginBottom: SPACING.xl,
     },
+    botonAgendar: {
+        backgroundColor: '#90C7A1', // 🎨 Botón principal Verde Pastel del Figma
+        marginTop: SPACING.lg,
+    }
 });
 
 export default CrearTurnoAdminScreen;

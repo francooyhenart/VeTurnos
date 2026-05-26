@@ -1,4 +1,3 @@
-// src/screens/admin/AgendaAdminScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -14,7 +13,6 @@ import {
   CargandoPantalla,
   EstadoVacio,
   AlertaError,
-  Tarjeta,
 } from '../../components/ui';
 import { COLORS, FONT_SIZE, SPACING, BORDER_RADIUS } from '../../constants';
 
@@ -41,30 +39,32 @@ const formatearHoraRango = (fechaHoraStr, duracionMinutos = 30) => {
   return `De ${formato(inicio)} a ${formato(fin)}`;
 };
 
+// 🚀 TARJETA COMPACTA ADAPTADA AL FLUJO MODERNO
 const ItemAgenda = ({ reserva, onMarcar }) => {
   const completado = reserva.estado === 'COMPLETADO' || reserva.estado === 'ASISTIDO';
 
   return (
-    <Tarjeta>
-      <View style={estilos.itemContenido}>
-        <View style={estilos.itemInfo}>
-          <Text style={estilos.itemHora}>
-            {formatearHoraRango(reserva.fechaHora, reserva.duracionMinutos)}
-          </Text>
-          <Text style={estilos.itemNombre}>{reserva.nombreCliente}</Text>
-          <Text style={estilos.itemMascota}>{reserva.nombreMascota}</Text>
-        </View>
-        <TouchableOpacity
-          style={[estilos.checkBoton, completado && estilos.checkBotonActivo]}
-          onPress={() => onMarcar(reserva)}
-          disabled={completado}
-          accessibilityLabel={completado ? 'Asistencia registrada' : 'Marcar asistencia'}
-          accessibilityRole="button"
-        >
-          <Text style={[estilos.checkTexto, completado && estilos.checkTextoActivo]}>✓</Text>
-        </TouchableOpacity>
+    <View style={estilos.itemTurno}>
+      {/* Contenedor Izquierdo: Datos consolidados */}
+      <View style={estilos.infoContenedor}>
+        <Text style={estilos.itemHora}>
+          {formatearHoraRango(reserva.fechaHora, reserva.duracionMinutos)}
+        </Text>
+        <Text style={estilos.itemNombre}>Cliente: {reserva.nombreCliente}</Text>
+        <Text style={estilos.itemMascota}>Paciente: {reserva.nombreMascota}</Text>
       </View>
-    </Tarjeta>
+
+      {/* Contenedor Derecho: Botón check optimizado */}
+      <TouchableOpacity
+        style={[estilos.checkBoton, completado && estilos.checkBotonActivo]}
+        onPress={() => onMarcar(reserva)}
+        disabled={completado}
+        accessibilityLabel={completado ? 'Asistencia registrada' : 'Marcar asistencia'}
+        accessibilityRole="button"
+      >
+        <Text style={[estilos.checkTexto, completado && estilos.checkTextoActivo]}>✓</Text>
+      </TouchableOpacity>
+    </View>
   );
 };
 
@@ -111,7 +111,7 @@ const AgendaAdminScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={estilos.safeArea}>
-      {/* Encabezado admin */}
+      {/* Encabezado admin unificado oscuro */}
       <View style={estilos.encabezado}>
         <Text style={estilos.saludo}>Hola, {nombre}</Text>
         <TouchableOpacity
@@ -128,7 +128,7 @@ const AgendaAdminScreen = ({ navigation }) => {
       <View style={estilos.contenido}>
         <Text style={estilos.seccionTitulo}>Agenda</Text>
 
-        {/* Navegador de fecha */}
+        {/* Navegador de fecha gris claro redondeado */}
         <View style={estilos.fechaNavegador}>
           <TouchableOpacity
             onPress={() => setFecha((f) => addDias(f, -1))}
@@ -166,6 +166,7 @@ const AgendaAdminScreen = ({ navigation }) => {
         )}
       </View>
 
+      {/* 🚀 BOTÓN FLOTANTE MÁS LLAMATIVO EN VERDE PASTEL */}
       <TouchableOpacity
         style={estilos.botonFlotante}
         onPress={() => navigation.navigate('CrearTurnoAdmin')}
@@ -177,16 +178,19 @@ const AgendaAdminScreen = ({ navigation }) => {
   );
 };
 
+// ════════════════════════════════════════════
+//  ESTILOS TOTALMENTE REESTRUCTURADOS (ADMIN)
+// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#143343', // 🎨 Fondo Oscuro general
   },
   encabezado: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
+    backgroundColor: '#143343',
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     paddingTop: SPACING.xl,
@@ -194,7 +198,7 @@ const estilos = StyleSheet.create({
   saludo: {
     fontSize: FONT_SIZE.xl,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: '#FFFFFF', // Saludo blanco
   },
   avatarBoton: {
     minWidth: 48,
@@ -206,14 +210,14 @@ const estilos = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: '#E3E3E3',
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInicial: {
     fontSize: FONT_SIZE.lg,
     fontWeight: '700',
-    color: COLORS.textInverse,
+    color: '#143343',
   },
   contenido: {
     flex: 1,
@@ -222,7 +226,7 @@ const estilos = StyleSheet.create({
   seccionTitulo: {
     fontSize: FONT_SIZE.xl,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: '#FFFFFF', // Título central en blanco
     textAlign: 'center',
     marginBottom: SPACING.lg,
   },
@@ -230,8 +234,8 @@ const estilos = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: '#E3E3E3', // 🎨 Gris claro redondeado uniforme
+    borderRadius: 8,
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     marginBottom: SPACING.md,
@@ -245,67 +249,77 @@ const estilos = StyleSheet.create({
   },
   fechaFlecha: {
     fontSize: 28,
-    color: COLORS.textSecondary,
-    fontWeight: '300',
+    color: '#1F1F1F',
+    fontWeight: '400',
   },
   fechaTexto: {
     fontSize: FONT_SIZE.md,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontWeight: '700',
+    color: '#1F1F1F',
   },
   lista: {
-    gap: SPACING.sm,
     paddingBottom: SPACING.xl,
   },
-  itemContenido: {
-    flexDirection: 'row',
+  // 🚀 TARJETA ULTRA FLACA ESTILO HORIZONTAL
+  itemTurno: {
+    backgroundColor: '#E3E3E3',
+    borderRadius: 12,
+    paddingVertical: 10,           // Aire vertical comprimido al mínimo
+    paddingHorizontal: SPACING.md,
+    marginVertical: 4,
+    flexDirection: 'row',          // Divide el contenido del botón de marcar
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  itemInfo: {
+  infoContenedor: {
     flex: 1,
-    gap: 2,
+    paddingRight: SPACING.sm,
   },
   itemHora: {
     fontSize: FONT_SIZE.md,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: '#143343', // Resalta la hora del turno
   },
   itemNombre: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    color: '#1F1F1F',
+    fontWeight: '500',
+    marginTop: 1,
   },
   itemMascota: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textMuted,
+    color: '#555555',
+    marginTop: 1,
   },
+  // 🚀 BOTÓN DE CHECK CORREGIDO Y ACCESIBLE
   checkBoton: {
-    width: 48,
-    height: 48,
-    borderRadius: BORDER_RADIUS.sm,
+    width: 44,
+    height: 44,
+    borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: '#143343',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: 'transparent',
   },
   checkBotonActivo: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: '#90C7A1', // 🎨 Verde pastel cuando asistió
+    borderColor: '#90C7A1',
   },
   checkTexto: {
-    fontSize: FONT_SIZE.lg,
-    color: COLORS.textMuted,
-    fontWeight: '600',
+    fontSize: 20,
+    color: '#143343',
+    fontWeight: '700',
   },
   checkTextoActivo: {
-    color: COLORS.textInverse,
+    color: '#143343', // Mantiene la legibilidad del tilde oscuro
   },
+  // 🚀 BOTÓN FLOATING SUMAR EN VERDE PASTEL
   botonFlotante: {
     position: 'absolute',
     bottom: SPACING.lg,
     right: SPACING.lg,
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#90C7A1', 
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -318,9 +332,9 @@ const estilos = StyleSheet.create({
     shadowRadius: 3.84,
   },
   botonFlotanteTexto: {
-    color: COLORS.textInverse,
+    color: '#143343', // Símbolo más oscuro para mejor contraste
     fontSize: 32,
-    fontWeight: '300',
+    fontWeight: '400',
     lineHeight: 32,
     marginBottom: 4,
   },

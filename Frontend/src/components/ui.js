@@ -1,4 +1,3 @@
-// src/components/ui.js
 // Componentes reutilizables para toda la app
 
 import React, { useState } from 'react';
@@ -89,14 +88,14 @@ export const CampoTexto = ({
   );
 };
 
-// ─── Selector (Picker) ─────────────────────────────────────────
+// ─── Selector (Picker) ───
 export const SelectorCampo = ({ placeholder, valor, alCambiar, opciones, error, estilo }) => (
   <View style={[estilos.campoContenedor, estilo]}>
     <View style={[estilos.campoWrapper, estilos.selectorWrapper, error && estilos.campoError]}>
       <Picker
         selectedValue={valor}
         onValueChange={alCambiar}
-        style={estilos.selector}
+        style={[estilos.selector, { backgroundColor: 'transparent' }]}
         dropdownIconColor={COLORS.textSecondary}
       >
         <Picker.Item label={placeholder} value="" color={COLORS.textMuted} />
@@ -109,7 +108,7 @@ export const SelectorCampo = ({ placeholder, valor, alCambiar, opciones, error, 
   </View>
 );
 
-// ─── Tarjeta genérica ──────────────────────────────────────────
+// ─── Tarjeta genérica ───
 export const Tarjeta = ({ children, estilo, onPress }) => {
   if (onPress) {
     return (
@@ -158,7 +157,7 @@ export const ModalConfirmacion = ({ visible, titulo, descripcion, onConfirmar, o
   </Modal>
 );
 
-// ─── Modal de Éxito ────────────────────────────────────────────
+// ─── Modal de Éxito (🚀 OPTIMIZADO CON ESTILO FIGMA) ───────────
 export const ModalExito = ({ visible, titulo, textBoton, onAccion }) => (
   <Modal transparent animationType="fade" visible={visible}>
     <View style={estilos.modalOverlay}>
@@ -169,9 +168,13 @@ export const ModalExito = ({ visible, titulo, textBoton, onAccion }) => (
         <View style={estilos.exitoIcono}>
           <Text style={estilos.exitoCheck}>✓</Text>
         </View>
-        <Text style={estilos.modalTitulo}>{titulo}</Text>
+        <Text style={estilos.modalExitoTitulo}>{titulo}</Text>
         {textBoton && (
-          <BotonPrimario titulo={textBoton} onPress={onAccion} estilo={{ marginTop: SPACING.md }} />
+          <BotonPrimario 
+            titulo={textBoton} 
+            onPress={onAccion} 
+            estilo={estilos.modalExitoBoton} 
+          />
         )}
       </View>
     </View>
@@ -194,8 +197,8 @@ export const EstadoVacio = ({ mensaje }) => (
 );
 
 // ─── Barra de navegación superior personalizada ───────────────
-export const EncabezadoPersonalizado = ({ titulo, onVolver }) => (
-  <View style={estilos.encabezado}>
+export const EncabezadoPersonalizado = ({ titulo, onVolver, estilo }) => (
+  <View style={[estilos.encabezado, estilo]}>
     {onVolver && (
       <TouchableOpacity onPress={onVolver} style={estilos.encabezadoBotonVolver} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
         <Text style={estilos.encabezadoFlecha}>←</Text>
@@ -206,10 +209,9 @@ export const EncabezadoPersonalizado = ({ titulo, onVolver }) => (
 );
 
 // ════════════════════════════════════════════
-//  ESTILOS
+//  ESTILOS BASE
 // ════════════════════════════════════════════
 const estilos = StyleSheet.create({
-  // Botón Primario
   botonPrimario: {
     backgroundColor: COLORS.buttonPrimary,
     borderRadius: BORDER_RADIUS.md,
@@ -228,8 +230,6 @@ const estilos = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.5,
   },
-
-  // Botón Secundario
   botonSecundario: {
     borderWidth: 1.5,
     borderColor: COLORS.primary,
@@ -245,8 +245,6 @@ const estilos = StyleSheet.create({
     fontSize: FONT_SIZE.md,
     fontWeight: '600',
   },
-
-  // Campo de texto
   campoContenedor: {
     marginBottom: SPACING.sm,
   },
@@ -290,18 +288,20 @@ const estilos = StyleSheet.create({
     marginTop: 4,
     marginLeft: SPACING.xs,
   },
-
-  // Selector
   selectorWrapper: {
     paddingHorizontal: 0,
+    backgroundColor: '#E3E3E3',
+    borderWidth: 0,
   },
   selector: {
     flex: 1,
     color: COLORS.textPrimary,
     fontSize: FONT_SIZE.md,
+    borderWidth: 0,
+    outlineStyle: 'none',
+    paddingHorizontal: SPACING.md,
+    cursor: 'pointer',
   },
-
-  // Tarjeta
   tarjeta: {
     backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.md,
@@ -309,8 +309,6 @@ const estilos = StyleSheet.create({
     marginBottom: SPACING.sm,
     ...SHADOWS.sm,
   },
-
-  // Alerta
   alerta: {
     backgroundColor: '#FDECEA',
     borderRadius: BORDER_RADIUS.sm,
@@ -322,23 +320,21 @@ const estilos = StyleSheet.create({
     color: COLORS.error,
     fontSize: FONT_SIZE.sm,
   },
-
-  // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.55)', // Un poquito más oscuro el fondo para aislar la vista
     alignItems: 'center',
     justifyContent: 'center',
     padding: SPACING.lg,
   },
   modalContenido: {
-    backgroundColor: COLORS.background,
-    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: '#FFFFFF', // Mantenemos la tarjeta en blanco limpio
+    borderRadius: 16,
     padding: SPACING.xl,
     width: '100%',
-    maxWidth: 340,
+    maxWidth: 320,
     alignItems: 'center',
-    ...SHADOWS.md,
+    ...SHADOWS.lg,
   },
   modalCerrar: {
     position: 'absolute',
@@ -351,7 +347,7 @@ const estilos = StyleSheet.create({
   },
   modalCerrarTexto: {
     fontSize: FONT_SIZE.lg,
-    color: COLORS.textSecondary,
+    color: '#9CA3AF',
   },
   modalTitulo: {
     fontSize: FONT_SIZE.xl,
@@ -360,6 +356,23 @@ const estilos = StyleSheet.create({
     textAlign: 'center',
     marginBottom: SPACING.sm,
     marginTop: SPACING.sm,
+  },
+  /* 🚀 Título del modal de éxito en azul oscuro/petróleo */
+  modalExitoTitulo: {
+    fontSize: FONT_SIZE.xl,
+    fontWeight: '700',
+    color: '#143343', 
+    textAlign: 'center',
+    marginBottom: SPACING.lg,
+    marginTop: SPACING.sm,
+  },
+  /* 🚀 Botón "Mis Turnos" en verde pastel con letras oscuras */
+  modalExitoBoton: {
+    backgroundColor: '#90C7A1',
+    width: '70%',
+    minHeight: 48,
+    borderRadius: 8,
+    marginTop: SPACING.xs,
   },
   modalDescripcion: {
     fontSize: FONT_SIZE.sm,
@@ -380,23 +393,22 @@ const estilos = StyleSheet.create({
     flex: 1,
     minHeight: 48,
   },
-
-  // Modal de éxito
+  /* 🚀 Círculo del check en gris muy clarito y estilizado */
   exitoIcono: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.surface,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: '#F3F4F6', 
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.md,
+    marginTop: SPACING.xs,
   },
   exitoCheck: {
-    fontSize: 36,
-    color: COLORS.textPrimary,
+    fontSize: 42,
+    color: '#1F1F1F', // Check negro definido
+    fontWeight: '300',
   },
-
-  // Cargando pantalla
   cargandoPantalla: {
     flex: 1,
     alignItems: 'center',
@@ -408,8 +420,6 @@ const estilos = StyleSheet.create({
     fontSize: FONT_SIZE.sm,
     color: COLORS.textSecondary,
   },
-
-  // Estado vacío
   estadoVacio: {
     flex: 1,
     alignItems: 'center',
@@ -418,15 +428,13 @@ const estilos = StyleSheet.create({
   },
   estadoVacioTexto: {
     fontSize: FONT_SIZE.md,
-    color: COLORS.textMuted,
+    color: '#D1D5DB',
     textAlign: 'center',
   },
-
-  // Encabezado
   encabezado: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: 'transparent',
     paddingHorizontal: SPACING.md,
     paddingTop: SPACING.lg,
     paddingBottom: SPACING.md,
@@ -441,7 +449,7 @@ const estilos = StyleSheet.create({
   },
   encabezadoFlecha: {
     fontSize: FONT_SIZE.xl,
-    color: COLORS.textPrimary,
+    color: '#FFFFFF', 
   },
   encabezadoTitulo: {
     fontSize: FONT_SIZE.lg,
