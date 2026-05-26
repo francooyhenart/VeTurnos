@@ -73,13 +73,13 @@ const CrearTurnoAdminScreen = ({ navigation }) => {
         } catch (e) {
             setError(e.message || 'Ocurrió un error al guardar el turno.');
         } finally {
-            新生= setCargando(false);
+            setCargando(false); // 🚀 Corregido: Limpiamos los caracteres intrusos
         }
     };
 
     return (
         <SafeAreaView style={estilos.safeArea}>
-        {/* 🚀 Encabezado unificado con el fondo oscuro */}
+        {/* Encabezado unificado con el fondo oscuro */}
         <EncabezadoPersonalizado onVolver={() => navigation.goBack()} titulo="" estilo={estilos.encabezadoOscuro} />
         
         <ScrollView contentContainerStyle={estilos.scroll} keyboardShouldPersistTaps="handled">
@@ -133,7 +133,7 @@ const CrearTurnoAdminScreen = ({ navigation }) => {
 
             {!!error && <AlertaError mensaje={error} estilo={{ marginTop: SPACING.md }} />}
 
-            {/* 🚀 BOTÓN PRINCIPAL EN VERDE PASTEL DEL FIGMA */}
+            {/* Botón Principal Verde Pastel */}
             <BotonPrimario
                 titulo={motivo === 'Cirugia' ? "Bloquear Quirófano" : "Agendar Turno"}
                 onPress={manejarGuardarTurno}
@@ -161,10 +161,10 @@ const CrearTurnoAdminScreen = ({ navigation }) => {
 const estilos = StyleSheet.create({
     safeArea: { 
         flex: 1, 
-        backgroundColor: '#143343' // 🎨 Fondo Azul Petróleo Oscuro general
+        backgroundColor: '#143343' // Fondo Azul Petróleo Oscuro general
     },
     encabezadoOscuro: {
-        backgroundColor: '#143343', // Fondo de la barra superior oscuro
+        backgroundColor: '#143343', 
     },
     scroll: { 
         padding: SPACING.lg 
@@ -172,12 +172,12 @@ const estilos = StyleSheet.create({
     titulo: {
         fontSize: FONT_SIZE.xxl,
         fontWeight: '700',
-        color: '#FFFFFF', // 🎨 Letras blancas para el título central
+        color: '#FFFFFF', 
         textAlign: 'center',
         marginBottom: SPACING.xl,
     },
     botonAgendar: {
-        backgroundColor: '#90C7A1', // 🎨 Botón principal Verde Pastel del Figma
+        backgroundColor: '#90C7A1', 
         marginTop: SPACING.lg,
     }
 });
