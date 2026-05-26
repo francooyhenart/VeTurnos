@@ -84,8 +84,8 @@ export const SHADOWS = {
   },
 };
 
-// Cambiar esta URL por la del servidor backend Java
-export const API_BASE_URL = 'http://localhost:8080/api';
+// Tomamos la URL dinámica desde el archivo .env
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 export const ESPECIES = [
   { label: 'Perro', value: 'PERRO' },
