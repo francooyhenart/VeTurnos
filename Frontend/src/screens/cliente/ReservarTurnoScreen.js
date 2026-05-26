@@ -1,4 +1,3 @@
-// src/screens/cliente/ReservarTurnoScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -7,7 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { listarMascotasPorCliente, obtenerAgenda, crearReserva } from '../../services/api';
@@ -84,12 +82,11 @@ const ReservarTurnoScreen = ({ navigation }) => {
         .filter((r) => r.estado !== 'CANCELADO')
         .forEach((r) => {
           const inicio = new Date(r.fechaHora);
-          const duracion = r.duracionMinutos || 30; // Fallback por si hay registros viejos de 30 min
+          const duracion = r.duracionMinutos || 30;
           
           let tiempoActual = new Date(inicio.getTime());
           const fin = new Date(inicio.getTime() + duracion * 60000);
           
-          // Recorremos el rango de la reserva bloqueando cada casillero de 30 minutos
           while (tiempoActual < fin) {
             const hStr = String(tiempoActual.getHours()).padStart(2, '0');
             const mStr = String(tiempoActual.getMinutes()).padStart(2, '0');
@@ -139,7 +136,6 @@ const ReservarTurnoScreen = ({ navigation }) => {
     const fechaHora = new Date(fecha);
     fechaHora.setHours(h, m, 0, 0);
 
-    // Validar que no sea pasado
     if (fechaHora <= new Date()) {
       setError('No se pueden reservar turnos en horarios ya transcurridos.');
       return;
@@ -173,7 +169,7 @@ const ReservarTurnoScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={estilos.safeArea}>
-      <EncabezadoPersonalizado onVolver={() => navigation.goBack()} titulo="" />
+      <EncabezadoPersonalizado onVolver={() => navigation.goBack()} titulo="" estilo={estilos.encabezadoOscuro} />
 
       <ScrollView contentContainerStyle={estilos.scroll} keyboardShouldPersistTaps="handled">
         <Text style={estilos.titulo}>Turnos disponibles</Text>
@@ -260,12 +256,13 @@ const ReservarTurnoScreen = ({ navigation }) => {
 
         {!!error && <AlertaError mensaje={error} estilo={{ marginTop: SPACING.md }} />}
 
+        {/* Botón Reservar */}
         <BotonPrimario
           titulo="Reservar"
           onPress={manejarReservar}
           cargando={reservando}
           deshabilitado={!horarioSeleccionado || !mascotaId}
-          estilo={{ marginTop: SPACING.lg }}
+          estilo={estilos.botonReservar}
         />
       </ScrollView>
 
@@ -276,17 +273,24 @@ const ReservarTurnoScreen = ({ navigation }) => {
         textBoton="Mis Turnos"
         onAccion={() => {
           setModalExito(false);
-          navigation.navigate('MisTurnos');
+          // 🚀 CORREGIDO: goBack() quita el formulario actual sin romper el stack ni desconfigurar el navbar inferior
+          navigation.goBack();
         }}
       />
     </SafeAreaView>
   );
 };
 
+// ════════════════════════════════════════════
+//  ESTILOS GENERALES ADAPTADOS AL MODO OSCURO
+// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#143343',
+  },
+  encabezadoOscuro: {
+    backgroundColor: '#143343',
   },
   scroll: {
     padding: SPACING.lg,
@@ -295,7 +299,7 @@ const estilos = StyleSheet.create({
   titulo: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: SPACING.lg,
   },
@@ -303,8 +307,8 @@ const estilos = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: '#E3E3E3',
+    borderRadius: 8,
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     marginBottom: SPACING.md,
@@ -318,51 +322,55 @@ const estilos = StyleSheet.create({
   },
   fechaFlecha: {
     fontSize: 28,
-    color: COLORS.textSecondary,
-    fontWeight: '300',
+    color: '#1F1F1F',
+    fontWeight: '400',
   },
   fechaTexto: {
     fontSize: FONT_SIZE.md,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontWeight: '700',
+    color: '#1F1F1F',
   },
   grilla: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: SPACING.sm,
+    justifyContent: 'space-between',
   },
   horarioBotón: {
-    width: '30%',
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.sm,
+    width: '31%',
+    backgroundColor: '#E3E3E3',
+    borderRadius: 8,
     paddingVertical: SPACING.md,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 48,
+    marginBottom: 4,
   },
   horarioOcupado: {
-    backgroundColor: COLORS.turnoOcupado,
+    backgroundColor: '#647D8B',
+    opacity: 0.6,
   },
   horarioSeleccionado: {
-    backgroundColor: COLORS.turnoSeleccionado,
+    backgroundColor: '#90C7A1',
   },
   horarioTexto: {
     fontSize: FONT_SIZE.sm,
-    fontWeight: '500',
-    color: COLORS.textPrimary,
+    fontWeight: '700',
+    color: '#1F1F1F',
   },
   horarioTextoOcupado: {
-    color: COLORS.textMuted,
+    color: '#E3E3E3',
+    fontWeight: '400',
   },
   horarioTextoSeleccionado: {
-    color: COLORS.textInverse,
-    fontWeight: '700',
+    color: '#143343',
+    fontWeight: '800',
   },
   leyenda: {
     fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
+    color: '#9CA3AF',
     textAlign: 'center',
-    marginTop: SPACING.sm,
+    marginTop: SPACING.md,
   },
   cargandoHorarios: {
     paddingVertical: SPACING.xl,
@@ -370,7 +378,11 @@ const estilos = StyleSheet.create({
   },
   cargandoTexto: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textMuted,
+    color: '#D1D5DB',
+  },
+  botonReservar: {
+    backgroundColor: '#90C7A1',
+    marginTop: SPACING.xl,
   },
 });
 

@@ -1,4 +1,3 @@
-// src/screens/cliente/TurnosScreen.js
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -14,17 +13,15 @@ import {
   CargandoPantalla,
   EstadoVacio,
   AlertaError,
-  Tarjeta,
   ModalConfirmacion,
 } from '../../components/ui';
-import { COLORS, FONT_SIZE, SPACING } from '../../constants';
+import { COLORS, FONT_SIZE, SPACING, BORDER_RADIUS } from '../../constants';
 
 // Proyecta el rango horario dinámicamente usando la duración que envía el DTO
 const formatearFechaHoraRango = (fechaHoraStr, duracionMinutos = 30) => {
   if (!fechaHoraStr) return '';
   
   const inicio = new Date(fechaHoraStr);
-  // Multiplicamos por 60000 para pasar los minutos a milisegundos
   const fin = new Date(inicio.getTime() + (duracionMinutos || 30) * 60000);
 
   const dia = inicio.getDate();
@@ -38,7 +35,7 @@ const formatearFechaHoraRango = (fechaHoraStr, duracionMinutos = 30) => {
 
 const badgeColor = (estado) => {
   switch (estado) {
-    case 'PENDIENTE': return COLORS.info;
+    case 'PENDIENTE': return '#0284C7'; // Un celeste prolijo para combinar
     case 'ASISTIDO': return COLORS.success;
     case 'COMPLETADO': return COLORS.primary;
     case 'CANCELADO': return COLORS.textMuted;
@@ -56,34 +53,35 @@ const badgeLabel = (estado) => {
   }
 };
 
+// 🚀 COMPONENTE TOTALMENTE CORREGIDO Y ALINEADO HORIZONTALMENTE
 const ItemTurno = ({ turno, onCancelar }) => (
-  <Tarjeta>
-    <View style={estilos.itemTurnoContenido}>
-      <View style={estilos.itemTurnoInfo}>
-        <Text style={estilos.itemTurnoNombreMascota}>{turno.nombreMascota}</Text>
-        <Text style={estilos.itemTurnoDetalle}>
-          {/* 🔥 Pasamos la duración al formateador para mostrar el rango completo */}
-          {formatearFechaHoraRango(turno.fechaHora, turno.duracionMinutos)}
-          {turno.motivo ? ` - ${turno.motivo}` : ''}
-        </Text>
-        <View style={[estilos.badge, { backgroundColor: badgeColor(turno.estado) + '22' }]}>
-          <Text style={[estilos.badgeTexto, { color: badgeColor(turno.estado) }]}>
-            {badgeLabel(turno.estado)}
-          </Text>
-        </View>
-      </View>
-      {turno.estado === 'PENDIENTE' && (
-        <TouchableOpacity
-          onPress={() => onCancelar(turno)}
-          style={estilos.botonCancelar}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          accessibilityLabel="Cancelar turno"
-        >
-          <Text style={estilos.iconoCancelar}>🗑</Text>
-        </TouchableOpacity>
-      )}
+  <View style={estilos.itemTurno}>
+    {/* Contenedor Izquierdo: Textos e info compacta */}
+    <View style={estilos.infoContenedor}>
+      <Text style={estilos.nombreMascota}>{turno.nombreMascota}</Text>
+      
+      <Text style={estilos.fechaTexto}>
+        {formatearFechaHoraRango(turno.fechaHora, turno.duracionMinutos)}
+        {turno.motivo ? ` - ${turno.motivo}` : ''}
+      </Text>
+      
+      <Text style={[estilos.estadoTexto, { color: badgeColor(turno.estado) }]}>
+        {badgeLabel(turno.estado)}
+      </Text>
     </View>
-  </Tarjeta>
+
+    {/* Contenedor Derecho: Tacho de basura más grande al costado */}
+    {turno.estado === 'PENDIENTE' && (
+      <TouchableOpacity
+        onPress={() => onCancelar(turno)}
+        style={estilos.botonEliminar}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        accessibilityLabel="Cancelar turno"
+      >
+        <Text style={estilos.tachoIcono}>🗑️</Text>
+      </TouchableOpacity>
+    )}
+  </View>
 );
 
 const TurnosScreen = ({ navigation }) => {
@@ -172,7 +170,6 @@ const TurnosScreen = ({ navigation }) => {
         ListEmptyComponent={<EstadoVacio mensaje="No tenés turnos programados." />}
       />
 
-      {/* Modal de confirmación de cancelación */}
       <ModalConfirmacion
         visible={!!turnoAcancelar}
         titulo="¿Cancelar este turno?"
@@ -184,101 +181,103 @@ const TurnosScreen = ({ navigation }) => {
   );
 };
 
+// ════════════════════════════════════════════
+//  ESTILOS TOTALMENTE RESTRUCTURADOS Y LIMPIOS
+// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#143343', // Fondo Azul Petróleo
   },
   encabezado: {
-    backgroundColor: COLORS.surface,
     paddingHorizontal: SPACING.md,
-    paddingTop: SPACING.xl,
-    paddingBottom: SPACING.md,
+    paddingTop: SPACING.lg,
+    minHeight: 48,
   },
   botonVolver: {
-    minWidth: 48,
-    minHeight: 48,
-    alignItems: 'center',
+    minWidth: 44,
+    minHeight: 44,
     justifyContent: 'center',
-    alignSelf: 'flex-start',
   },
   flechaTexto: {
     fontSize: FONT_SIZE.xl,
-    color: COLORS.textPrimary,
+    color: '#FFFFFF', // Flecha de volver blanca
   },
   tituloContenedor: {
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
+    paddingVertical: SPACING.md, 
   },
   titulo: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: '#FFFFFF',
     textAlign: 'center',
   },
   lista: {
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.xl,
-    gap: SPACING.sm,
   },
-  itemTurnoContenido: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  // 🚀 TARJETA SUPER FLACA CON ALINEACIÓN HORIZONTAL (ESTILO FIGMA)
+  itemTurno: {
+    backgroundColor: '#E3E3E3', 
+    borderRadius: 12,
+    paddingVertical: 10,           // 👈 Ultra flaco arriba y abajo
+    paddingHorizontal: SPACING.md,  
+    marginVertical: 4,              
+    flexDirection: 'row',          // Info a la izquierda, tacho a la derecha
+    alignItems: 'center',          
     justifyContent: 'space-between',
   },
-  itemTurnoInfo: {
-    flex: 1,
-    gap: 4,
+  infoContenedor: {
+    flex: 1,                       // Toma todo el ancho disponible empujando el tacho al final
+    paddingRight: SPACING.sm,
   },
-  itemTurnoNombreMascota: {
+  nombreMascota: {
     fontSize: FONT_SIZE.md,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontWeight: '700',
+    color: '#143343', 
   },
-  itemTurnoDetalle: {
+  fechaTexto: {
+    fontSize: FONT_SIZE.sm - 1,   // Un punto menos de tamaño para ganar espacio vertical
+    color: '#1F1F1F',
+    marginTop: 2,
+  },
+  estadoTexto: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    fontWeight: '700',
+    marginTop: 2,
   },
-  badge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
-    borderRadius: 12,
-    marginTop: 4,
-  },
-  badgeTexto: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: '600',
-  },
-  botonCancelar: {
-    minWidth: 48,
-    minHeight: 48,
+  // 🚀 BOTÓN ELIMINAR CON EL TACHO GRANDE AL COSTADO
+  botonEliminar: {
+    minWidth: 44,                 
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconoCancelar: {
-    fontSize: 22,
+  tachoIcono: {
+    fontSize: 22,                 // 👈 Tacho más grande y accesible en web
+    color: '#EF4444',
   },
   alertaAdvertencia: {
-    backgroundColor: '#FFF3E0',
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.warning,
+    backgroundColor: '#FEF3C7',
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     padding: SPACING.md,
-    margin: SPACING.md,
+    marginHorizontal: SPACING.lg,
     borderRadius: 8,
+    marginBottom: SPACING.sm,
   },
   alertaAdvertenciaTexto: {
-    flex: 1,
+    color: '#92400E',
     fontSize: FONT_SIZE.sm,
-    color: '#E65100',
+    flex: 1,
   },
   cerrarAdvertencia: {
+    color: '#92400E',
     fontSize: FONT_SIZE.md,
-    color: COLORS.textSecondary,
-    paddingLeft: SPACING.sm,
+    marginLeft: SPACING.sm,
+    padding: 4,
   },
 });
 

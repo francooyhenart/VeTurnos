@@ -1,4 +1,3 @@
-// src/screens/cliente/InicioClienteScreen.js
 import React from 'react';
 import {
   View,
@@ -66,16 +65,19 @@ const InicioClienteScreen = ({ navigation }) => {
   );
 };
 
+// ════════════════════════════════════════════
+//  ESTILOS TUNEADOS CON LA PALETA FIGMA B1
+// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.backgroundSecondary,
+    backgroundColor: '#143343', // 🎨 Fondo Azul Petróleo Oscuro general
   },
   encabezado: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
+    backgroundColor: '#143343', // 🎨 Unificado con el fondo de la app
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     paddingTop: SPACING.xl,
@@ -83,7 +85,7 @@ const estilos = StyleSheet.create({
   saludo: {
     fontSize: FONT_SIZE.xl,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: '#FFFFFF', // 🎨 "Hola, Brenda" en color blanco
   },
   avatarBoton: {
     minWidth: 48,
@@ -95,33 +97,33 @@ const estilos = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: '#E3E3E3', // 🎨 Gris clarito para el fondo del avatar
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInicial: {
     fontSize: FONT_SIZE.lg,
     fontWeight: '700',
-    color: COLORS.textInverse,
+    color: '#1F1F1F', // 🎨 Inicial en texto oscuro
   },
   scroll: {
     padding: SPACING.lg,
     gap: SPACING.md,
   },
   tarjetaAccion: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: '#A3E1FC', // 🎨 Las 3 tarjetas principales en Celeste Pastel
+    borderRadius: 12, // Bordes redondeados más suaves
     paddingVertical: SPACING.xl,
     paddingHorizontal: SPACING.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 100,
+    minHeight: 110, // Un toque más de aire vertical
     ...SHADOWS.sm,
   },
   tarjetaAccionTexto: {
     fontSize: FONT_SIZE.lg,
-    fontWeight: '500',
-    color: COLORS.textPrimary,
+    fontWeight: '700', // 🎨 Texto con más peso para que sea legible
+    color: '#143343', // 🎨 Color azul oscuro para las letras sobre el celeste
   },
 });
 

@@ -1,4 +1,3 @@
-// src/screens/auth/LoginScreen.js
 import React, { useState } from 'react';
 import {
   View,
@@ -8,11 +7,14 @@ import {
   Platform,
   StyleSheet,
   TouchableOpacity,
+  Image, // 🚀 IMPORTANTE: Agregamos Image para renderizar el logo
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { login } from '../../services/api';
 import { CampoTexto, BotonPrimario, AlertaError } from '../../components/ui';
 import { COLORS, FONT_SIZE, SPACING, BORDER_RADIUS } from '../../constants';
+
+const logoImagen = require('../../logo.jpg');
 
 const LoginScreen = ({ navigation }) => {
   const { iniciarSesion } = useAuth();
@@ -56,6 +58,18 @@ const LoginScreen = ({ navigation }) => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={estilos.contenedor}>
+          
+          {/* 🚀 EL LOGO EN FORMATO CÍRCULO ESTILO FIGMA */}
+          <View style={estilos.logoContenedor}>
+            <View style={estilos.logoCirculo}>
+              <Image 
+                source={logoImagen} 
+                style={estilos.logo} 
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+
           <Text style={estilos.titulo}>Iniciar sesión</Text>
 
           <View style={estilos.formulario}>
@@ -78,7 +92,7 @@ const LoginScreen = ({ navigation }) => {
               titulo="Ingresar"
               onPress={manejarLogin}
               cargando={cargando}
-              estilo={{ marginTop: SPACING.lg }}
+              estilo={estilos.botonIngresar}
             />
           </View>
 
@@ -95,26 +109,53 @@ const LoginScreen = ({ navigation }) => {
   );
 };
 
+// ════════════════════════════════════════════
+//  ESTILOS ACTUALIZADOS CON EL LOGO CIRCULAR
+// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
   scroll: {
     flexGrow: 1,
   },
   contenedor: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#143343',
     paddingHorizontal: SPACING.xl,
     justifyContent: 'center',
     minHeight: '100%',
   },
+  /* 🚀 Estilos para el contenedor y círculo del logo */
+  logoContenedor: {
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  logoCirculo: {
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',    // Borde blanco idéntico al Figma
+    backgroundColor: '#90C7A1', // Fondo verde pastel del logo
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',        // Asegura que la imagen no se desborde del círculo
+  },
+  logo: {
+    width: '85%',
+    height: '85%',
+  },
   titulo: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: SPACING.xl,
   },
   formulario: {
     gap: SPACING.sm,
+  },
+  botonIngresar: {
+    backgroundColor: '#90C7A1',
+    marginTop: SPACING.lg,
   },
   linkRegistro: {
     alignSelf: 'center',
@@ -125,7 +166,7 @@ const estilos = StyleSheet.create({
   },
   linkTexto: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    color: '#A3E1FC',
     textDecorationLine: 'underline',
   },
 });

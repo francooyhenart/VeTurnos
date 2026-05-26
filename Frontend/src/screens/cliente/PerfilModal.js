@@ -1,4 +1,3 @@
-// src/screens/cliente/PerfilModal.js
 import React from 'react';
 import {
   View,
@@ -37,7 +36,7 @@ const PerfilModal = ({ navigation }) => {
         <Text style={estilos.cerrarTexto}>✕</Text>
       </TouchableOpacity>
 
-      {/* Avatar grande */}
+      {/* Avatar grande estilo Figma */}
       <View style={estilos.avatarContenedor}>
         <View style={estilos.avatar}>
           <Text style={estilos.avatarInicial}>{inicial}</Text>
@@ -47,20 +46,25 @@ const PerfilModal = ({ navigation }) => {
       <View style={estilos.menu}>
         <ItemMenu titulo="Configuración" onPress={() => {}} />
         <ItemMenu titulo="Ayuda" onPress={() => {}} />
+        
+        {/* 🚀 Botón Cerrar Sesión Verde Pastel */}
         <BotonPrimario
           titulo="Cerrar sesión"
           onPress={manejarCerrarSesion}
-          estilo={{ marginTop: SPACING.md }}
+          estilo={estilos.botonCerrarSesion}
         />
       </View>
     </SafeAreaView>
   );
 };
 
+// ════════════════════════════════════════════
+//  ESTILOS TUNEADOS CON LA PALETA DEL MENU FIGMA
+// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.backgroundSecondary,
+    backgroundColor: '#143343', // 🎨 Fondo Azul Petróleo Oscuro
     paddingHorizontal: SPACING.xl,
   },
   cerrar: {
@@ -73,7 +77,7 @@ const estilos = StyleSheet.create({
   },
   cerrarTexto: {
     fontSize: FONT_SIZE.xl,
-    color: COLORS.textSecondary,
+    color: '#FFFFFF', // 🎨 Cruz blanca
   },
   avatarContenedor: {
     alignItems: 'center',
@@ -83,32 +87,37 @@ const estilos = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
+    borderWidth: 3,
+    borderColor: '#FFFFFF', // 🎨 Borde blanco prolijo para resaltar el logo
+    backgroundColor: '#90C7A1', // 🎨 Fondo Verde Pastel para el círculo del logo
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInicial: {
     fontSize: 52,
-    fontWeight: '300',
-    color: COLORS.textSecondary,
+    fontWeight: '700',
+    color: '#143343', // 🎨 Letra oscura (Azul Petróleo) para que contraste
   },
   menu: {
     gap: SPACING.sm,
   },
   itemMenu: {
-    backgroundColor: COLORS.background,
-    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: '#E3E3E3', // 🎨 Barras gris claro idénticas a los inputs del Figma
+    borderRadius: 8,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
     minHeight: 52,
     justifyContent: 'center',
+    marginVertical: 2,
   },
   itemMenuTexto: {
     fontSize: FONT_SIZE.md,
-    color: COLORS.textPrimary,
-    fontWeight: '500',
+    color: '#1F1F1F', // 🎨 Texto oscuro sobre el fondo gris claro
+    fontWeight: '700',
+  },
+  botonCerrarSesion: {
+    backgroundColor: '#90C7A1', // 🎨 Botón Cerrar Sesión en Verde Claro
+    marginTop: SPACING.xl,
   },
 });
 
