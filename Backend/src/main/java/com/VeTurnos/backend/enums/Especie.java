@@ -1,10 +1,5 @@
+// Especie.java
+
 package com.veturnos.backend.enums;
 
-public enum Especie {
-    PERRO,
-    GATO,
-    AVE,
-    ROEDOR,
-    REPTIL,
-    OTRO
-}
+public enum Especie { PERRO, GATO, AVE, ROEDOR, REPTIL, OTRO } 

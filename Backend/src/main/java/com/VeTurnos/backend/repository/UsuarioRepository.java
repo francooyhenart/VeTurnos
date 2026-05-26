@@ -1,3 +1,5 @@
+// UsuarioRepository.java
+
 package com.veturnos.backend.repository;
 
 import com.veturnos.backend.model.Usuario;
@@ -6,7 +8,6 @@ import java.util.Optional;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByEmail(String email);
-
     boolean existsByEmail(String email);
     boolean existsByDni(String dni);
 }
