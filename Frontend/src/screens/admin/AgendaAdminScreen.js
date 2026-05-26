@@ -92,6 +92,12 @@ const AgendaAdminScreen = ({ navigation }) => {
     }
   }, [fecha]);
 
+  // 🚀 CAMBIO 1: Escucha el cambio dinámico de las flechas del calendario
+  useEffect(() => {
+    cargarAgenda();
+  }, [cargarAgenda]);
+
+  // 🚀 CAMBIO 2: Escucha el foco de navegación incluyendo la función en sus dependencias
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', cargarAgenda);
     return unsubscribe;
