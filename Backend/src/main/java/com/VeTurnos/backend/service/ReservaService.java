@@ -33,44 +33,45 @@ public class ReservaService {
 
     @Transactional
     public ReservaResponse reservarTurno(ReservaRequest request) {
-        // 1. Validar solapamiento de agenda (US-03 AC 02)
-        boolean horarioOcupado = reservaRepository.existsByFechaHoraAndEstadoNot(request.getFechaHora(), EstadoReserva.CANCELADO);
-        if (horarioOcupado) {
-            throw new IllegalArgumentException("El horario seleccionado ya no se encuentra disponible");
+        // 1. Calcular el fin del nuevo turno según su duración
+        int duracion = request.getDuracionMinutos() != null ? request.getDuracionMinutos() : 30;
+        LocalDateTime fechaHoraFin = request.getFechaHora().plusMinutes(duracion);
+
+        // 2. Validar solapamiento de rangos en la agenda
+        boolean seSolapa = reservaRepository.existeSolapamiento(request.getFechaHora(), fechaHoraFin, EstadoReserva.CANCELADO);
+        if (seSolapa) {
+            throw new IllegalArgumentException("El rango horario seleccionado se solapa con un turno existente");
         }
 
-        // 2. Buscar Entidades
+        // 3. Buscar Entidades
         Cliente cliente = clienteRepository.findById(request.getClienteId())
                 .orElseThrow(() -> new IllegalArgumentException("El cliente especificado no existe"));
 
         Mascota mascota = mascotaRepository.findById(request.getMascotaId())
                 .orElseThrow(() -> new IllegalArgumentException("La mascota especificada no existe"));
 
-        // 3. Validar que la mascota pertenezca al cliente real
         if (!mascota.getDueño().getId().equals(cliente.getId())) {
             throw new IllegalArgumentException("La mascota especificada no pertenece al cliente indicado");
         }
 
-        // 4. Instanciar Dominio y Guardar (Nace en PENDIENTE por constructor)
-        Reserva nuevaReserva = new Reserva(mascota, cliente, request.getFechaHora());
+        // 4. Guardar un ÚNICO registro con su duración real
+        Reserva nuevaReserva = new Reserva(mascota, cliente, request.getFechaHora(), duracion);
         Reserva reservaGuardada = reservaRepository.save(nuevaReserva);
 
         return mapperAResponse(reservaGuardada);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = IllegalStateException.class)
     public void cancelarReserva(Long id) {
         Reserva reserva = reservaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("La reserva no existe"));
 
-        // Evalúa la regla de las 24 horas usando el método del dominio
         boolean requiereRecargo = reserva.requiereRecargoPorCancelacion();
 
-        // Ejecuta la transición de estado lógica del dominio
+        // Al ser una sola fila, esto cancela el bloque completo de una
         reserva.cancelar();
         reservaRepository.save(reserva);
 
-        // Si es tardía, avisamos lanzando la excepción específica para que el Controller lo exponga
         if (requiereRecargo) {
             throw new IllegalStateException("Se cobrará un recargo por cancelación tardía debido a que faltan menos de 24 horas para la consulta");
         }
@@ -78,11 +79,11 @@ public class ReservaService {
 
     @Transactional(readOnly = true)
     public List<ReservaResponse> obtenerAgendaDelDia(LocalDate fecha) {
-        // Calcula extremos 00:00:00 y 23:59:59.999999 (US-05 AC 01)
         LocalDateTime inicio = fecha.atStartOfDay();
         LocalDateTime fin = fecha.atTime(LocalTime.MAX);
 
-        List<Reserva> reservas = reservaRepository.findByFechaHoraBetween(inicio, fin);
+        // Usamos la nueva consulta que contempla turnos cruzados entre días
+        List<Reserva> reservas = reservaRepository.findReservasDelDia(inicio, fin);
 
         return reservas.stream()
                 .map(this::mapperAResponse)
@@ -119,7 +120,8 @@ public class ReservaService {
                 reserva.getCliente().getNombreCompleto(),
                 reserva.getMascota().getNombre(),
                 reserva.getFechaHora(),
-                reserva.getEstado().name()
+                reserva.getEstado().name(),
+                reserva.getDuracionMinutos()
         );
     }
 }

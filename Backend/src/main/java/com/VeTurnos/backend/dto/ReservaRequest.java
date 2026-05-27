@@ -17,6 +17,8 @@ public class ReservaRequest {
     @Future(message = "La fecha del turno debe ser futura") // Cumple US-03 AC 03
     private LocalDateTime fechaHora;
 
+    private Integer duracionMinutos;
+
     // Getters y Setters
     public Long getMascotaId() { return mascotaId; }
     public void setMascotaId(Long mascotaId) { this.mascotaId = mascotaId; }
@@ -26,4 +28,7 @@ public class ReservaRequest {
 
     public LocalDateTime getFechaHora() { return fechaHora; }
     public void setFechaHora(LocalDateTime fechaHora) { this.fechaHora = fechaHora; }
+
+    public Integer getDuracionMinutos() { return duracionMinutos; }
+    public void setDuracionMinutos(Integer duracionMinutos) { this.duracionMinutos = duracionMinutos; }
 }

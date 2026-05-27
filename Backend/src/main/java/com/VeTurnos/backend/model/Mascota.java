@@ -1,3 +1,5 @@
+// Mascota.java
+
 package com.veturnos.backend.model;
 
 import com.veturnos.backend.enums.Especie;
@@ -46,7 +48,6 @@ public class Mascota {
         if (dueño == null) {
             throw new IllegalArgumentException("La mascota debe estar asociada a un dueño (cliente)");
         }
-
         this.nombre = nombre;
         this.especie = especie;
         this.raza = raza;
@@ -54,7 +55,7 @@ public class Mascota {
         this.dueño = dueño;
     }
 
-    // Getters y Setters
+// Getters y Setters
     public Long getId() { return id; }
     public String getNombre() { return nombre; }
     public Especie getEspecie() { return especie; }
@@ -65,4 +66,4 @@ public class Mascota {
     public void setDueño(Cliente dueño) {
         this.dueño = dueño;
     }
-}
+} 
