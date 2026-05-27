@@ -2,6 +2,10 @@
 FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY . .
+
+# Forzar permisos de ejecución para Linux
+RUN chmod +x ./mvnw
+
 RUN ./mvnw clean package -DskipTests
 
 # Paso 2: Imagen liviana para correr la app
