@@ -1,4 +1,4 @@
-// Mascota.java
+// Mascota.java (Actualizado para Entrega 2)
 
 package com.veturnos.backend.model;
 
@@ -30,9 +30,19 @@ public class Mascota {
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente dueño;
 
+    // 🚀 E2: Campo multimedia para guardar la foto comprimida de la mascota en Base64
+    @Column(columnDefinition = "TEXT")
+    private String foto;
+
     public Mascota() {}
 
+    // Constructor con los parámetros obligatorios de E1
     public Mascota(String nombre, Especie especie, String raza, Integer edad, Cliente dueño) {
+        this(nombre, especie, raza, edad, dueño, null);
+    }
+
+    // 🚀 E2: Constructor sobrecargado que admite la foto opcional
+    public Mascota(String nombre, Especie especie, String raza, Integer edad, Cliente dueño, String foto) {
         if (nombre == null || nombre.trim().isEmpty()) {
             throw new IllegalArgumentException("El nombre de la mascota no puede estar vacío");
         }
@@ -53,17 +63,27 @@ public class Mascota {
         this.raza = raza;
         this.edad = edad;
         this.dueño = dueño;
+        this.foto = foto;
     }
 
-// Getters y Setters
+    // Getters y Setters
     public Long getId() { return id; }
+    
     public String getNombre() { return nombre; }
-    public Especie getEspecie() { return especie; }
-    public String getRaza() { return raza; }
-    public Integer getEdad() { return edad; }
-    public Cliente getDueño() { return dueño; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
 
-    public void setDueño(Cliente dueño) {
-        this.dueño = dueño;
-    }
-} 
+    public Especie getEspecie() { return especie; }
+    public void setEspecie(Especie especie) { this.especie = especie; }
+
+    public String getRaza() { return raza; }
+    public void setRaza(String raza) { this.raza = raza; }
+
+    public Integer getEdad() { return edad; }
+    public void setEdad(Integer edad) { this.edad = edad; }
+
+    public Cliente getDueño() { return dueño; }
+    public void setDueño(Cliente dueño) { this.dueño = dueño; }
+
+    public String getFoto() { return foto; }
+    public void setFoto(String foto) { this.foto = foto; }
+}
