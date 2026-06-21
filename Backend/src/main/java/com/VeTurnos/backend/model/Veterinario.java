@@ -4,6 +4,8 @@ package com.veturnos.backend.model;
 
 import com.veturnos.backend.enums.Rol;
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "veterinarios")
@@ -17,6 +19,9 @@ public class Veterinario extends Usuario {
 
     @Column(nullable = false)
     private Boolean esAdministrador;
+
+    @OneToMany(mappedBy = "veterinario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Reserva> reservas = new ArrayList<>();
 
     public Veterinario() {
         super();
@@ -37,6 +42,29 @@ public class Veterinario extends Usuario {
 
 // Getters y Setters
     public String getMatricula() { return matricula; }
+    public void setMatricula(String matricula) { this.matricula = matricula; }
+
     public String getEspecialidad() { return especialidad; }
+    public void setEspecialidad(String especialidad) { this.especialidad = especialidad; }
+
     public Boolean getEsAdministrador() { return esAdministrador; }
+    public void setEsAdministrador(Boolean esAdministrador) { this.esAdministrador = esAdministrador; }
+
+    public List<Reserva> getReservas() { return reservas; }
+    public void setReservas(List<Reserva> reservas) { this.reservas = reservas; }
+
+    // Métodos helpers para mantener la consistencia de la relación bidireccional
+    public void agregarReserva(Reserva reserva) {
+        this.reservas.add(reserva);
+        reserva.setVeterinario(this);
+    }
+
+    public void removerReserva(Reserva reserva) {
+        this.reservas.remove(reserva);
+        reserva.setVeterinario(null);
+    }
+
+
+
+
 } 
