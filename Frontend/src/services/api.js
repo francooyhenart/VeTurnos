@@ -55,13 +55,27 @@ export const login = async (data) => {
 };
 
 // ═══════════════════════════════════════════
+//  VETERINARIOS ENDPOINTS  →  /api/veterinarios (Nuevo E2)
+// ═══════════════════════════════════════════
+
+/**
+ * Obtiene la lista de todos los veterinarios activos y sus especialidades.
+ * GET /api/veterinarios
+ * @returns {Promise<{ id, nombre, especialidad }[]>}
+ */
+export const listarVeterinarios = async () => {
+  const response = await api.get('/veterinarios');
+  return response.data;
+};
+
+// ═══════════════════════════════════════════
 //  MASCOTAS ENDPOINTS  →  /api/mascotas
 // ═══════════════════════════════════════════
 
 /**
  * Registra una nueva mascota.
  * POST /api/mascotas
- * @param {{ nombre, especie, raza, edad, clienteId }} data
+ * @param {{ nombre, especie, raza, edad, clienteId, foto }} data  --> 🚀 E2: foto viaja en Base64 string
  * @returns {Promise<MascotaResponse>}
  */
 export const registrarMascota = async (data) => {
@@ -85,10 +99,10 @@ export const listarMascotasPorCliente = async (clienteId) => {
 // ═══════════════════════════════════════════
 
 /**
- * Crea una nueva reserva.
+ * Crea una nueva reserva vinculando cliente, mascota y profesional.
  * POST /api/reservas
- * @param {{ clienteId, mascotaId, fechaHora }} data
- *   fechaHora en formato ISO: "2025-05-11T10:30:00"
+ * @param {{ clienteId, veterinarioId, mascotaId, motivo, fechaHora }} data --> 🚀 E2: Se acopla veterinarioId y motivo
+ * fechaHora en formato ISO: "2025-05-11T10:30:00"
  * @returns {Promise<ReservaResponse>}
  */
 export const crearReserva = async (data) => {
@@ -108,13 +122,18 @@ export const cancelarReserva = async (id) => {
 };
 
 /**
- * Obtiene la agenda del día (para admin/vet).
- * GET /api/reservas/agenda?fecha=YYYY-MM-DD
- * @param {string} fecha  formato "YYYY-MM-DD"
+ * Obtiene la agenda del día filtrando opcionalmente por veterinario (US-06 / US-03).
+ * GET /api/reservas/agenda?fecha=YYYY-MM-DD&veterinarioId=ID
+ * @param {string} fecha formato "YYYY-MM-DD"
+ * @param {number|string} [veterinarioId] ID del profesional seleccionado --> 🚀 E2: Query param opcional/requerido
  * @returns {Promise<ReservaResponse[]>}
  */
-export const obtenerAgenda = async (fecha) => {
-  const response = await api.get('/reservas/agenda', { params: { fecha } });
+export const obtenerAgenda = async (fecha, veterinarioId = '') => {
+  const params = { fecha };
+  if (veterinarioId) {
+    params.veterinarioId = veterinarioId;
+  }
+  const response = await api.get('/reservas/agenda', { params });
   return response.data;
 };
 
@@ -133,13 +152,19 @@ export const registrarAsistencia = async (id, estado) => {
 };
 
 /**
- * Obtiene reservas de un cliente (filtrando por fecha si fuera necesario).
- * GET /api/reservas/agenda - filtramos localmente por clienteId
- * Nota: como el backend no tiene un endpoint GET por clienteId,
- * obtenemos todas las reservas del día o usamos la agenda completa.
- * Para "Mis turnos" necesitamos un approach alternativo:
- * consultamos la agenda de varios días y filtramos por cliente.
- * 
+ * Guarda las observaciones clínicas / diagnóstico de un turno atendido (RF-11 / US-09).
+ * POST /api/reservas/:id/ficha-medica
+ * @param {number} id ID de la reserva/turno
+ * @param {{ observaciones: string }} data Notas del profesional
+ * @returns {Promise<ReservaResponse>}
+ */
+export const guardarObservacionesClinicas = async (id, data) => {
+  const response = await api.post(`/reservas/${id}/ficha-medica`, data);
+  return response.data;
+};
+
+/**
+ * Obtiene reservas de un cliente.
  * WORKAROUND: Consultamos los próximos 30 días y filtramos por nombreCliente.
  * @param {string} nombreCliente
  * @returns {Promise<ReservaResponse[]>}
@@ -160,7 +185,6 @@ export const obtenerReservasCliente = async (nombreCliente) => {
   const resultados = await Promise.all(promesas);
   const todas = resultados.flatMap((r) => r.data || []);
 
-  // Filtramos por nombreCliente (coincidencia parcial, case-insensitive)
   return todas.filter((r) =>
     r.nombreCliente?.toLowerCase().includes(nombreCliente.toLowerCase())
   );
