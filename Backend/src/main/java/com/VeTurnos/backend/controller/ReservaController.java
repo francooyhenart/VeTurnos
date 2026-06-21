@@ -49,7 +49,6 @@ public class ReservaController {
             okResponse.put("mensaje", "La reserva fue cancelada con éxito y el horario quedó liberado");
             return new ResponseEntity<>(okResponse, HttpStatus.OK);
         } catch (IllegalStateException e) {
-            // Cancelación tardía: Se procesó la baja pero avisa el recargo (US-04 AC 02)
             Map<String, String> warningResponse = new HashMap<>();
             warningResponse.put("advertencia", e.getMessage());
             return new ResponseEntity<>(warningResponse, HttpStatus.OK);
@@ -64,11 +63,13 @@ public class ReservaController {
         }
     }
 
+    // 🚀 E2: Modificado para admitir filtrado horizontal por Veterinario ID (US-03 / US-06)
     @GetMapping("/agenda")
     public ResponseEntity<?> obtenerAgenda(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
+            @RequestParam(required = false) Long veterinarioId) {
         try {
-            List<ReservaResponse> response = reservaService.obtenerAgendaDelDia(fecha);
+            List<ReservaResponse> response = reservaService.obtenerAgendaDelDia(fecha, veterinarioId);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();
@@ -91,6 +92,31 @@ public class ReservaController {
         } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "Ocurrió un error inesperado al actualizar el estado de asistencia");
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // 🚀 E2: Nuevo Endpoint para persistir la Ficha Médica / Observaciones Clínicas (RF-12 / US-09)
+    @PostMapping("/{id}/ficha-medica")
+    public ResponseEntity<?> guardarFichaMedica(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        try {
+            String observaciones = body.get("observaciones");
+            if (observaciones == null || observaciones.trim().isEmpty()) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Las observaciones clínicas no pueden estar vacías");
+                return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+            }
+            ReservaResponse response = reservaService.guardarFichaClinica(id, observaciones);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Ocurrió un error inesperado al guardar la ficha médica");
             return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
