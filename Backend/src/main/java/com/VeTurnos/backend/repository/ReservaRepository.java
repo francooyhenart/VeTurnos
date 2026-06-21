@@ -10,6 +10,18 @@ import java.util.List;
 
 public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
+    // 🚀 E2: Modificado para validar el solapamiento únicamente en la agenda del veterinario especificado
+    @Query("SELECT COUNT(r) > 0 FROM Reserva r WHERE r.veterinario.id = :veterinarioId AND r.estado <> :estado " +
+            "AND :nuevoInicio < r.fechaHora + (r.duracionMinutos * 1 minute) " +
+            "AND :nuevoFin > r.fechaHora")
+    boolean existeSolapamientoPorVeterinario(
+            @Param("nuevoInicio") LocalDateTime nuevoInicio,
+            @Param("nuevoFin") LocalDateTime nuevoFin,
+            @Param("veterinarioId") Long registrarVeterinarioId,
+            @Param("estado") EstadoReserva estado
+    );
+
+    // Mantenemos soporte por si se requiere validar de forma global o flujos heredados
     @Query("SELECT COUNT(r) > 0 FROM Reserva r WHERE r.estado <> :estado " +
             "AND :nuevoInicio < r.fechaHora + (r.duracionMinutos * 1 minute) " +
             "AND :nuevoFin > r.fechaHora")
@@ -19,11 +31,20 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
             @Param("estado") EstadoReserva estado
     );
 
-    // Trae los turnos que se superpongan de cualquier manera con el día consultado
+    // Trae todos los turnos del día de forma global
     @Query("SELECT r FROM Reserva r WHERE r.fechaHora < :fin " +
             "AND r.fechaHora + (r.duracionMinutos * 1 minute) > :inicio")
     List<Reserva> findReservasDelDia(
             @Param("inicio") LocalDateTime inicio,
             @Param("fin") LocalDateTime fin
+    );
+
+    // 🚀 E2: Nuevo query relacional para filtrar la agenda por fecha y profesional asignado (US-03 / US-06)
+    @Query("SELECT r FROM Reserva r WHERE r.veterinario.id = :veterinarioId AND r.fechaHora < :fin " +
+            "AND r.fechaHora + (r.duracionMinutos * 1 minute) > :inicio")
+    List<Reserva> findReservasDelDiaPorVeterinario(
+            @Param("inicio") LocalDateTime inicio,
+            @Param("fin") LocalDateTime fin,
+            @Param("veterinarioId") Long veterinarioId
     );
 }
