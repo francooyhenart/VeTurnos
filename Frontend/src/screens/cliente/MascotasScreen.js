@@ -6,6 +6,7 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  Image, // 🚀 Importamos Image para renderizar la foto nativa capturada
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useMascotas } from '../../hooks/index';
@@ -18,15 +19,22 @@ import {
 import { COLORS, FONT_SIZE, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants';
 
 const ItemMascota = ({ mascota, onPress }) => (
-  /* 🚀 Ahora que corregimos la Tarjeta, este estilo verde va a pisar al blanco base */
   <Tarjeta onPress={onPress} estilo={estilos.itemMascota}>
     <View style={estilos.itemMascotaContenido}>
       <View style={estilos.iconoMascota}>
-        <Text style={estilos.iconoMascotaTexto}>
-          {mascota.especie === 'PERRO' ? '🐶' :
-           mascota.especie === 'GATO' ? '🐱' :
-           mascota.especie === 'AVE' ? '🐦' : '🐾'}
-        </Text>
+        {/* 🚀 Validación E2: Si tiene foto Base64 renderiza la imagen, sino el Emoji nativo */}
+        {mascota.foto ? (
+          <Image 
+            source={{ uri: `data:image/jpeg;base64,${mascota.foto}` }} 
+            style={estilos.fotoMascotaReal} 
+          />
+        ) : (
+          <Text style={estilos.iconoMascotaTexto}>
+            {mascota.especie === 'PERRO' ? '🐶' :
+             mascota.especie === 'GATO' ? '🐱' :
+             mascota.especie === 'AVE' ? '🐦' : '🐾'}
+          </Text>
+        )}
       </View>
       <View style={estilos.infoMascota}>
         <Text style={estilos.nombreMascota}>{mascota.nombre}</Text>
@@ -94,16 +102,12 @@ const MascotasScreen = ({ navigation }) => {
   );
 };
 
-// ════════════════════════════════════════════
-//  ESTILOS TUNEADOS CON LOS COLORES DEL FIGMA
-// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#143343', // 🎨 Fondo Azul Petróleo (B2 - Figma)
+    backgroundColor: '#143343', 
   },
   encabezado: {
-    backgroundColor: '#143343', // 🎨 Unificado con el fondo oscuro
     paddingHorizontal: SPACING.md,
     paddingTop: SPACING.xl,
     paddingBottom: SPACING.md,
@@ -117,7 +121,7 @@ const estilos = StyleSheet.create({
   },
   flechaTexto: {
     fontSize: FONT_SIZE.xl,
-    color: '#FFFFFF', // 🎨 Flecha blanca para contrastar
+    color: '#FFFFFF', 
   },
   tituloContenedor: {
     paddingHorizontal: SPACING.lg,
@@ -126,7 +130,7 @@ const estilos = StyleSheet.create({
   titulo: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: '700',
-    color: '#FFFFFF', // 🎨 Título en blanco impecable
+    color: '#FFFFFF', 
     textAlign: 'center',
   },
   lista: {
@@ -136,7 +140,7 @@ const estilos = StyleSheet.create({
   },
   itemMascota: {
     marginBottom: 0,
-    backgroundColor: '#90C7A1', // 🎨 Tarjeta Verde Pastel
+    backgroundColor: '#90C7A1', 
     borderRadius: 12,
   },
   itemMascotaContenido: {
@@ -148,9 +152,15 @@ const estilos = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#FFFFFF', // 🎨 Círculo blanco del avatar
+    backgroundColor: '#FFFFFF', 
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden', // 🚀 Clave para que la foto no tape las esquinas redondeadas
+  },
+  fotoMascotaReal: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   iconoMascotaTexto: {
     fontSize: 28,
@@ -161,11 +171,11 @@ const estilos = StyleSheet.create({
   nombreMascota: {
     fontSize: FONT_SIZE.md,
     fontWeight: '700',
-    color: '#1F1F1F', // 🎨 Texto oscuro sobre fondo claro
+    color: '#1F1F1F', 
   },
   detalleMascota: {
     fontSize: FONT_SIZE.sm,
-    color: '#3A4D40', // 🎨 Subtítulo verde oscuro
+    color: '#3A4D40', 
     marginTop: 2,
     fontWeight: '500',
   },
@@ -176,14 +186,14 @@ const estilos = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#90C7A1', // 🎨 Botón flotante Verde Pastel
+    backgroundColor: '#90C7A1', 
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.md,
   },
   fabTexto: {
     fontSize: 32,
-    color: '#143343', // 🎨 Signo "+" oscuro del color del fondo
+    color: '#143343', 
     fontWeight: 'bold',
     lineHeight: 34,
   },
