@@ -6,9 +6,11 @@ import com.veturnos.backend.enums.EstadoReserva;
 import com.veturnos.backend.model.Cliente;
 import com.veturnos.backend.model.Mascota;
 import com.veturnos.backend.model.Reserva;
+import com.veturnos.backend.model.Veterinario;
 import com.veturnos.backend.repository.ClienteRepository;
 import com.veturnos.backend.repository.MascotaRepository;
 import com.veturnos.backend.repository.ReservaRepository;
+import com.veturnos.backend.repository.VeterinarioRepository; // 🚀 E2: Importamos el nuevo repositorio
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,23 +26,37 @@ public class ReservaService {
     private final ReservaRepository reservaRepository;
     private final ClienteRepository clienteRepository;
     private final MascotaRepository mascotaRepository;
+    private final VeterinarioRepository veterinarioRepository; // 🚀 E2: Añadido para inyección
 
-    public ReservaService(ReservaRepository reservaRepository, ClienteRepository clienteRepository, MascotaRepository mascotaRepository) {
+    public ReservaService(ReservaRepository reservaRepository, 
+                          ClienteRepository clienteRepository, 
+                          MascotaRepository mascotaRepository,
+                          VeterinarioRepository veterinarioRepository) {
         this.reservaRepository = reservaRepository;
         this.clienteRepository = clienteRepository;
         this.mascotaRepository = mascotaRepository;
+        this.veterinarioRepository = veterinarioRepository;
     }
 
     @Transactional
     public ReservaResponse reservarTurno(ReservaRequest request) {
+        if (request.getVeterinarioId() == null) {
+            throw new IllegalArgumentException("Debe especificar un profesional médico veterinario");
+        }
+
         // 1. Calcular el fin del nuevo turno según su duración
         int duracion = request.getDuracionMinutos() != null ? request.getDuracionMinutos() : 30;
         LocalDateTime fechaHoraFin = request.getFechaHora().plusMinutes(duracion);
 
-        // 2. Validar solapamiento de rangos en la agenda
-        boolean seSolapa = reservaRepository.existeSolapamiento(request.getFechaHora(), fechaHoraFin, EstadoReserva.CANCELADO);
+        // 2. Validar solapamiento de rangos en la agenda PARTICULAR del veterinario seleccionado (US-03 / US-06)
+        boolean seSolapa = reservaRepository.existeSolapamientoPorVeterinario(
+                request.getFechaHora(), 
+                fechaHoraFin, 
+                request.getVeterinarioId(), 
+                EstadoReserva.CANCELADO
+        );
         if (seSolapa) {
-            throw new IllegalArgumentException("El rango horario seleccionado se solapa con un turno existente");
+            throw new IllegalArgumentException("El rango horario seleccionado se solapa con un turno del veterinario elegido");
         }
 
         // 3. Buscar Entidades
@@ -50,12 +66,15 @@ public class ReservaService {
         Mascota mascota = mascotaRepository.findById(request.getMascotaId())
                 .orElseThrow(() -> new IllegalArgumentException("La mascota especificada no existe"));
 
+        Veterinario veterinario = veterinarioRepository.findById(request.getVeterinarioId())
+                .orElseThrow(() -> new IllegalArgumentException("El veterinario especificado no existe"));
+
         if (!mascota.getDueño().getId().equals(cliente.getId())) {
             throw new IllegalArgumentException("La mascota especificada no pertenece al cliente indicado");
         }
 
-        // 4. Guardar un ÚNICO registro con su duración real
-        Reserva nuevaReserva = new Reserva(mascota, cliente, request.getFechaHora(), duracion);
+        // 4. Guardar un ÚNICO registro asociando el Veterinario y el Motivo
+        Reserva nuevaReserva = new Reserva(mascota, cliente, veterinario, request.getFechaHora(), duracion, request.getMotivo());
         Reserva reservaGuardada = reservaRepository.save(nuevaReserva);
 
         return mapperAResponse(reservaGuardada);
@@ -68,7 +87,6 @@ public class ReservaService {
 
         boolean requiereRecargo = reserva.requiereRecargoPorCancelacion();
 
-        // Al ser una sola fila, esto cancela el bloque completo de una
         reserva.cancelar();
         reservaRepository.save(reserva);
 
@@ -77,13 +95,18 @@ public class ReservaService {
         }
     }
 
+    // 🚀 E2: Modificado para admitir filtrado horizontal por profesional
     @Transactional(readOnly = true)
-    public List<ReservaResponse> obtenerAgendaDelDia(LocalDate fecha) {
+    public List<ReservaResponse> obtenerAgendaDelDia(LocalDate fecha, Long veterinarioId) {
         LocalDateTime inicio = fecha.atStartOfDay();
         LocalDateTime fin = fecha.atTime(LocalTime.MAX);
 
-        // Usamos la nueva consulta que contempla turnos cruzados entre días
-        List<Reserva> reservas = reservaRepository.findReservasDelDia(inicio, fin);
+        List<Reserva> reservas;
+        if (veterinarioId != null) {
+            reservas = reservaRepository.findReservasDelDiaPorVeterinario(inicio, fin, veterinarioId);
+        } else {
+            reservas = reservaRepository.findReservasDelDia(inicio, fin);
+        }
 
         return reservas.stream()
                 .map(this::mapperAResponse)
@@ -102,7 +125,6 @@ public class ReservaService {
             throw new IllegalArgumentException("Estado de asistencia inválido");
         }
 
-        // Conmutación segura usando las reglas de negocio de tu entidad de dominio
         if (estadoEnum == EstadoReserva.ASISTIDO) {
             reserva.marcarComoAsistido();
         } else if (estadoEnum == EstadoReserva.COMPLETADO) {
@@ -114,6 +136,21 @@ public class ReservaService {
         return mapperAResponse(reservaRepository.save(reserva));
     }
 
+    // 🚀 E2: Nuevo método de servicio para guardar la Ficha Clínica / Observaciones Médicas (RF-12 / US-09)
+    @Transactional
+    public ReservaResponse guardarFichaClinica(Long id, String observaciones) {
+        Reserva reserva = reservaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("La reserva no existe"));
+
+        // Se persiste el expediente clínico histórico en la reserva del paciente
+        reserva.setObservaciones(observaciones);
+        
+        // Regla de Negocio: Al guardar la ficha médica pasamos automáticamente la reserva a COMPLETADO
+        reserva.completar();
+
+        return mapperAResponse(reservaRepository.save(reserva));
+    }
+
     private ReservaResponse mapperAResponse(Reserva reserva) {
         return new ReservaResponse(
                 reserva.getId(),
@@ -121,7 +158,9 @@ public class ReservaService {
                 reserva.getMascota().getNombre(),
                 reserva.getFechaHora(),
                 reserva.getEstado().name(),
-                reserva.getDuracionMinutos()
+                reserva.getDuracionMinutos(),
+                reserva.getObservaciones(), // 🚀 E2: Mapeamos observaciones hacia la respuesta DTO
+                reserva.getMotivo()         // 🚀 E2: Mapeamos el motivo de consulta
         );
     }
 }
