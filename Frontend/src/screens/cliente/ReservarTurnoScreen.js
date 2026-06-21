@@ -8,7 +8,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { listarMascotasPorCliente, obtenerAgenda, crearReserva } from '../../services/api';
+// 🚀 E2: Agregamos listarVeterinarios para la grilla de profesionales independientes
+import { listarMascotasPorCliente, obtenerAgenda, crearReserva, listarVeterinarios } from '../../services/api';
 import {
   SelectorCampo,
   BotonPrimario,
@@ -21,7 +22,6 @@ import {
   COLORS, FONT_SIZE, SPACING, BORDER_RADIUS, MOTIVOS, HORARIOS_DISPONIBLES,
 } from '../../constants';
 
-// Formatea una fecha como "Lun 11 May"
 const formatearFecha = (fecha) => {
   return fecha.toLocaleDateString('es-AR', {
     weekday: 'short',
@@ -30,7 +30,6 @@ const formatearFecha = (fecha) => {
   });
 };
 
-// Agrega días a una fecha
 const addDias = (fecha, dias) => {
   const nueva = new Date(fecha);
   nueva.setDate(nueva.getDate() + dias);
@@ -42,39 +41,57 @@ const ReservarTurnoScreen = ({ navigation }) => {
 
   const [mascotas, setMascotas] = useState([]);
   const [mascotaId, setMascotaId] = useState('');
+  const [veterinarios, setVeterinarios] = useState([]); // 🚀 E2: Estado para la cartilla médica
+  const [veterinarioId, setVeterinarioId] = useState(''); // 🚀 E2: Profesional seleccionado
   const [motivo, setMotivo] = useState('');
   const [fecha, setFecha] = useState(new Date());
   const [horariosOcupados, setHorariosOcupados] = useState([]);
   const [horarioSeleccionado, setHorarioSeleccionado] = useState(null);
 
-  const [cargandoMascotas, setCargandoMascotas] = useState(true);
+  const [cargandoInicial, setCargandoInicial] = useState(true); // 🚀 Combinamos estados de carga de catálogo
   const [cargandoAgenda, setCargandoAgenda] = useState(false);
   const [reservando, setReservando] = useState(false);
   const [error, setError] = useState('');
   const [modalExito, setModalExito] = useState(false);
 
-  // Cargar mascotas al montar
+  // 🚀 E2: Cargar Catálogos Iniciales (Mascotas y Veterinarios)
   useEffect(() => {
-    const cargar = async () => {
+    const cargarCatalogos = async () => {
       try {
-        const data = await listarMascotasPorCliente(usuario.id);
-        setMascotas(data.map((m) => ({ label: m.nombre, value: String(m.id) })));
+        const [dataMascotas, dataVeterinarios] = await Promise.all([
+          listarMascotasPorCliente(usuario.id),
+          listarVeterinarios()
+        ]);
+        
+        setMascotas(dataMascotas.map((m) => ({ label: m.nombre, value: String(m.id) })));
+        
+        // Formateamos mostrando nombre y especialidad médica para la US-06
+        setVeterinarios(dataVeterinarios.map((v) => ({ 
+          label: `${v.nombre} (${v.especialidad ? v.especialidad : 'General'})`, 
+          value: String(v.id) 
+        })));
       } catch (e) {
-        setError('No se pudieron cargar las mascotas.');
+        setError('No se pudieron cargar los datos iniciales.');
       } finally {
-        setCargandoMascotas(false);
+        setCargandoInicial(false);
       }
     };
-    cargar();
-  }, []);
+    cargarCatalogos();
+  }, [usuario.id]);
 
-  // Cargar agenda cuando cambia la fecha
+  // 🚀 E2: Cargar agenda filtrando obligatoriamente por Fecha y por Veterinario ID
   const cargarAgenda = useCallback(async () => {
+    if (!veterinarioId) {
+      setHorariosOcupados([]);
+      return;
+    }
+    
     setCargandoAgenda(true);
     setHorarioSeleccionado(null);
     try {
       const fechaStr = fecha.toISOString().split('T')[0];
-      const reservas = await obtenerAgenda(fechaStr);
+      // Pasamos el veterinarioId para la consulta en la base de datos relacional
+      const reservas = await obtenerAgenda(fechaStr, veterinarioId);
       
       const ocupados = [];
       
@@ -102,7 +119,7 @@ const ReservarTurnoScreen = ({ navigation }) => {
     } finally {
       setCargandoAgenda(false);
     }
-  }, [fecha]);
+  }, [fecha, veterinarioId]);
 
   useEffect(() => {
     cargarAgenda();
@@ -117,6 +134,10 @@ const ReservarTurnoScreen = ({ navigation }) => {
   };
 
   const manejarSeleccionarHorario = (horario) => {
+    if (!veterinarioId) {
+      setError('Por favor, seleccioná primero un profesional médico.');
+      return;
+    }
     if (horariosOcupados.includes(horario)) return;
     if (esPasado(horario)) {
       setError('No se pueden reservar turnos en horarios ya transcurridos.');
@@ -130,6 +151,7 @@ const ReservarTurnoScreen = ({ navigation }) => {
     setError('');
 
     if (!mascotaId) { setError('Seleccioná una mascota.'); return; }
+    if (!veterinarioId) { setError('Seleccioná un veterinario.'); return; }
     if (!horarioSeleccionado) { setError('Seleccioná un horario.'); return; }
 
     const [h, m] = horarioSeleccionado.split(':').map(Number);
@@ -152,9 +174,12 @@ const ReservarTurnoScreen = ({ navigation }) => {
 
     setReservando(true);
     try {
+      // 🚀 E2: Enviamos el veterinarioId para persistir la clave foránea en Spring Boot
       await crearReserva({
         clienteId: usuario.id,
+        veterinarioId: parseInt(veterinarioId, 10),
         mascotaId: parseInt(mascotaId, 10),
+        motivo: motivo || 'CONSULTA_GENERAL',
         fechaHora: fechaHoraLocalStr      
       });
       setModalExito(true);
@@ -165,7 +190,7 @@ const ReservarTurnoScreen = ({ navigation }) => {
     }
   };
 
-  if (cargandoMascotas) return <CargandoPantalla />;
+  if (cargandoInicial) return <CargandoPantalla />;
 
   return (
     <SafeAreaView style={estilos.safeArea}>
@@ -183,9 +208,18 @@ const ReservarTurnoScreen = ({ navigation }) => {
           estilo={{ marginBottom: SPACING.sm }}
         />
 
+        {/* 🚀 E2: Nuevo Selector de Profesional Técnico (US-06) */}
+        <SelectorCampo
+          placeholder="Seleccionar Profesional"
+          valor={veterinarioId}
+          alCambiar={setVeterinarioId}
+          opciones={veterinarios}
+          estilo={{ marginBottom: SPACING.sm }}
+        />
+
         {/* Selector de motivo */}
         <SelectorCampo
-          placeholder="Motivo"
+          placeholder="Motivo de consulta"
           valor={motivo}
           alCambiar={setMotivo}
           opciones={MOTIVOS}
@@ -211,8 +245,12 @@ const ReservarTurnoScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Grilla de horarios */}
-        {cargandoAgenda ? (
+        {/* Grilla de horarios dinámicos */}
+        {!veterinarioId ? (
+          <View style={estilos.cargandoHorarios}>
+            <Text style={estilos.cargandoTexto}>Elegí un profesional para ver sus turnos.</Text>
+          </View>
+        ) : cargandoAgenda ? (
           <View style={estilos.cargandoHorarios}>
             <Text style={estilos.cargandoTexto}>Cargando disponibilidad...</Text>
           </View>
@@ -222,7 +260,7 @@ const ReservarTurnoScreen = ({ navigation }) => {
               {HORARIOS_DISPONIBLES.map((horario) => {
                 const ocupado = horariosOcupados.includes(horario);
                 const pasado = esPasado(horario);
-                const seleccionado = horario === horarioSeleccionado;
+                const seleccionado =  horario === horarioSeleccionado;
                 const noDisponible = ocupado || pasado;
 
                 return (
@@ -261,7 +299,7 @@ const ReservarTurnoScreen = ({ navigation }) => {
           titulo="Reservar"
           onPress={manejarReservar}
           cargando={reservando}
-          deshabilitado={!horarioSeleccionado || !mascotaId}
+          deshabilitado={!horarioSeleccionado || !mascotaId || !veterinarioId}
           estilo={estilos.botonReservar}
         />
       </ScrollView>
@@ -273,7 +311,6 @@ const ReservarTurnoScreen = ({ navigation }) => {
         textBoton="Mis Turnos"
         onAccion={() => {
           setModalExito(false);
-          // 🚀 CORREGIDO: goBack() quita el formulario actual sin romper el stack ni desconfigurar el navbar inferior
           navigation.goBack();
         }}
       />
@@ -281,9 +318,6 @@ const ReservarTurnoScreen = ({ navigation }) => {
   );
 };
 
-// ════════════════════════════════════════════
-//  ESTILOS GENERALES ADAPTADOS AL MODO OSCURO
-// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -379,6 +413,7 @@ const estilos = StyleSheet.create({
   cargandoTexto: {
     fontSize: FONT_SIZE.sm,
     color: '#D1D5DB',
+    textAlign: 'center',
   },
   botonReservar: {
     backgroundColor: '#90C7A1',
