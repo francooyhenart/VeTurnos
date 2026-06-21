@@ -6,13 +6,21 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { obtenerAgenda, registrarAsistencia } from '../../services/api';
+// 🚀 E2: Importamos guardarObservacionesClinicas para la Ficha Médica
+import { obtenerAgenda, registrarAsistencia, guardarObservacionesClinicas } from '../../services/api';
 import {
   CargandoPantalla,
   EstadoVacio,
   AlertaError,
+  BotonPrimario,
 } from '../../components/ui';
 import { COLORS, FONT_SIZE, SPACING, BORDER_RADIUS } from '../../constants';
 
@@ -29,7 +37,6 @@ const formatearFecha = (fecha) =>
     month: 'short',
   });
 
-// Calculates the time range using the duration provided by the backend
 const formatearHoraRango = (fechaHoraStr, duracionMinutos = 30) => {
   if (!fechaHoraStr) return '';
   const inicio = new Date(fechaHoraStr);
@@ -39,22 +46,27 @@ const formatearHoraRango = (fechaHoraStr, duracionMinutos = 30) => {
   return `De ${formato(inicio)} a ${formato(fin)}`;
 };
 
-// 🚀 TARJETA COMPACTA ADAPTADA AL FLUJO MODERNO
-const ItemAgenda = ({ reserva, onMarcar }) => {
+const ItemAgenda = ({ reserva, onMarcar, onAbrirConsulta }) => {
   const completado = reserva.estado === 'COMPLETADO' || reserva.estado === 'ASISTIDO';
 
   return (
-    <View style={estilos.itemTurno}>
-      {/* Contenedor Izquierdo: Datos consolidados */}
+    // 🚀 E2: Al presionar la tarjeta abrimos el modal para escribir las observaciones clínicas
+    <TouchableOpacity 
+      style={estilos.itemTurno} 
+      onPress={() => onAbrirConsulta(reserva)}
+      activeOpacity={0.8}
+    >
       <View style={estilos.infoContenedor}>
         <Text style={estilos.itemHora}>
           {formatearHoraRango(reserva.fechaHora, reserva.duracionMinutos)}
         </Text>
         <Text style={estilos.itemNombre}>Cliente: {reserva.nombreCliente}</Text>
         <Text style={estilos.itemMascota}>Paciente: {reserva.nombreMascota}</Text>
+        {reserva.observaciones && (
+          <Text style={estilos.itemFichaStatus}>📝 Ficha Médica Registrada</Text>
+        )}
       </View>
 
-      {/* Contenedor Derecho: Botón check optimizado */}
       <TouchableOpacity
         style={[estilos.checkBoton, completado && estilos.checkBotonActivo]}
         onPress={() => onMarcar(reserva)}
@@ -64,7 +76,7 @@ const ItemAgenda = ({ reserva, onMarcar }) => {
       >
         <Text style={[estilos.checkTexto, completado && estilos.checkTextoActivo]}>✓</Text>
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -75,13 +87,18 @@ const AgendaAdminScreen = ({ navigation }) => {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
 
+  // 🚀 E2: Estados para el modal de evolución clínica
+  const [modalVisible, setModalVisible] = useState(false);
+  const [turnoSeleccionado, setTurnoSeleccionado] = useState(null);
+  const [observaciones, setObservaciones] = useState('');
+  const [guardandoFicha, setGuardandoFicha] = useState(false);
+
   const cargarAgenda = useCallback(async () => {
     setCargando(true);
     setError('');
     try {
       const fechaStr = fecha.toISOString().split('T')[0];
       const data = await obtenerAgenda(fechaStr);
-      // Solo mostrar pendientes y asistidos (no cancelados)
       const filtrados = data.filter((r) => r.estado !== 'CANCELADO');
       filtrados.sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora));
       setAgenda(filtrados);
@@ -92,12 +109,10 @@ const AgendaAdminScreen = ({ navigation }) => {
     }
   }, [fecha]);
 
-  // 🚀 CAMBIO 1: Escucha el cambio dinámico de las flechas del calendario
   useEffect(() => {
     cargarAgenda();
   }, [cargarAgenda]);
 
-  // 🚀 CAMBIO 2: Escucha el foco de navegación incluyendo la función en sus dependencias
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', cargarAgenda);
     return unsubscribe;
@@ -113,11 +128,43 @@ const AgendaAdminScreen = ({ navigation }) => {
     }
   };
 
+  // 🚀 E2: Abre el panel de redacción para la historia clínica
+  const manejarAbrirConsulta = (reserva) => {
+    setTurnoSeleccionado(reserva);
+    setObservaciones(reserva.observaciones || '');
+    setModalVisible(true);
+  };
+
+  // 🚀 E2: Envía el diagnóstico/tratamiento al backend de Spring Boot
+  const manejarGuardarFicha = async () => {
+    if (!observaciones.trim()) {
+      Alert.alert('Datos obligatorios', 'Por favor, ingresá las anotaciones del diagnóstico antes de guardar.');
+      return;
+    }
+
+    setGuardandoFicha(true);
+    try {
+      await guardarObservacionesClinicas(turnoSeleccionado.id, { observaciones: observaciones.trim() });
+      
+      // Si el turno estaba pendiente, automáticamente lo pasamos a completado/asistido
+      if (turnoSeleccionado.estado === 'PENDIENTE') {
+        await registrarAsistencia(turnoSeleccionado.id, 'COMPLETADO');
+      }
+
+      setModalVisible(false);
+      Alert.alert('Éxito', 'Ficha clínica guardada y sincronizada correctamente.');
+      await cargarAgenda();
+    } catch (e) {
+      Alert.alert('Error', e.message || 'No se pudo salvar el expediente médico.');
+    } finally {
+      setGuardandoFicha(false);
+    }
+  };
+
   const nombre = usuario?.nombreCompleto?.split(' ')[0] || 'Admin';
 
   return (
     <SafeAreaView style={estilos.safeArea}>
-      {/* Encabezado admin unificado oscuro */}
       <View style={estilos.encabezado}>
         <Text style={estilos.saludo}>Hola, {nombre}</Text>
         <TouchableOpacity
@@ -134,7 +181,6 @@ const AgendaAdminScreen = ({ navigation }) => {
       <View style={estilos.contenido}>
         <Text style={estilos.seccionTitulo}>Agenda</Text>
 
-        {/* Navegador de fecha gris claro redondeado */}
         <View style={estilos.fechaNavegador}>
           <TouchableOpacity
             onPress={() => setFecha((f) => addDias(f, -1))}
@@ -162,7 +208,11 @@ const AgendaAdminScreen = ({ navigation }) => {
             data={agenda}
             keyExtractor={(item) => String(item.id)}
             renderItem={({ item }) => (
-              <ItemAgenda reserva={item} onMarcar={manejarMarcar} />
+              <ItemAgenda 
+                reserva={item} 
+                onMarcar={manejarMarcar} 
+                onAbrirConsulta={manejarAbrirConsulta}
+              />
             )}
             contentContainerStyle={estilos.lista}
             ListEmptyComponent={
@@ -172,7 +222,6 @@ const AgendaAdminScreen = ({ navigation }) => {
         )}
       </View>
 
-      {/* 🚀 BOTÓN FLOTANTE MÁS LLAMATIVO EN VERDE PASTEL */}
       <TouchableOpacity
         style={estilos.botonFlotante}
         onPress={() => navigation.navigate('CrearTurnoAdmin')}
@@ -180,17 +229,66 @@ const AgendaAdminScreen = ({ navigation }) => {
       >
         <Text style={estilos.botonFlotanteTexto}>+</Text>
       </TouchableOpacity>
+
+      {/* 🚀 E2: MODAL NATIVO PARA REGISTRO DE FICHA MÉDICA */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <SafeAreaView style={estilos.modalCentrado}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1, width: '100%' }}
+          >
+            <View style={estilos.modalContenedor}>
+              <View style={estilos.modalEncabezado}>
+                <Text style={estilos.modalTitulo}>Ficha Clínica</Text>
+                <TouchableOpacity onPress={() => setModalVisible(false)} minWidth={48} minHeight={48}>
+                  <Text style={estilos.modalCerrarIcono}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={estilos.modalScroll} keyboardShouldPersistTaps="handled">
+                {turnoSeleccionado && (
+                  <View style={estilos.modalMetaInfo}>
+                    <Text style={estilos.metaTexto}><Text style={estilos.negrita}>Paciente:</Text> {turnoSeleccionado.nombreMascota}</Text>
+                    <Text style={estilos.metaTexto}><Text style={estilos.negrita}>Dueño:</Text> {turnoSeleccionado.nombreCliente}</Text>
+                    <Text style={estilos.metaTexto}><Text style={estilos.negrita}>Motivo:</Text> {turnoSeleccionado.motivo || 'Consulta General'}</Text>
+                  </View>
+                )}
+
+                <Text style={estilos.labelInput}>Observaciones y Tratamiento:</Text>
+                <TextInput
+                  style={estilos.textAreaInput}
+                  multiline={true}
+                  numberOfLines={6}
+                  placeholder="Escribí acá la evolución, diagnóstico clínico y medicamentos recetados..."
+                  placeholderTextColor="#777777"
+                  value={observaciones}
+                  onChangeText={setObservaciones}
+                />
+
+                <BotonPrimario
+                  titulo="Guardar Historial Clínico"
+                  onPress={manejarGuardarFicha}
+                  cargando={guardandoFicha}
+                  estilo={estilos.modalGuardarBoton}
+                />
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 };
 
-// ════════════════════════════════════════════
-//  ESTILOS TOTALMENTE REESTRUCTURADOS (ADMIN)
-// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#143343', // 🎨 Fondo Oscuro general
+    backgroundColor: '#143343', 
   },
   encabezado: {
     flexDirection: 'row',
@@ -204,7 +302,7 @@ const estilos = StyleSheet.create({
   saludo: {
     fontSize: FONT_SIZE.xl,
     fontWeight: '700',
-    color: '#FFFFFF', // Saludo blanco
+    color: '#FFFFFF', 
   },
   avatarBoton: {
     minWidth: 48,
@@ -232,7 +330,7 @@ const estilos = StyleSheet.create({
   seccionTitulo: {
     fontSize: FONT_SIZE.xl,
     fontWeight: '700',
-    color: '#FFFFFF', // Título central en blanco
+    color: '#FFFFFF', 
     textAlign: 'center',
     marginBottom: SPACING.lg,
   },
@@ -240,7 +338,7 @@ const estilos = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#E3E3E3', // 🎨 Gris claro redondeado uniforme
+    backgroundColor: '#E3E3E3', 
     borderRadius: 8,
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
@@ -266,14 +364,13 @@ const estilos = StyleSheet.create({
   lista: {
     paddingBottom: SPACING.xl,
   },
-  // 🚀 TARJETA ULTRA FLACA ESTILO HORIZONTAL
   itemTurno: {
     backgroundColor: '#E3E3E3',
     borderRadius: 12,
-    paddingVertical: 10,           // Aire vertical comprimido al mínimo
+    paddingVertical: 12,          
     paddingHorizontal: SPACING.md,
     marginVertical: 4,
-    flexDirection: 'row',          // Divide el contenido del botón de marcar
+    flexDirection: 'row',          
     alignItems: 'center',
     justifyContent: 'space-between',
   },
@@ -284,7 +381,7 @@ const estilos = StyleSheet.create({
   itemHora: {
     fontSize: FONT_SIZE.md,
     fontWeight: '700',
-    color: '#143343', // Resalta la hora del turno
+    color: '#143343', 
   },
   itemNombre: {
     fontSize: FONT_SIZE.sm,
@@ -297,7 +394,12 @@ const estilos = StyleSheet.create({
     color: '#555555',
     marginTop: 1,
   },
-  // 🚀 BOTÓN DE CHECK CORREGIDO Y ACCESIBLE
+  itemFichaStatus: {
+    fontSize: 12,
+    color: '#3A4D40',
+    fontWeight: '700',
+    marginTop: 4,
+  },
   checkBoton: {
     width: 44,
     height: 44,
@@ -309,7 +411,7 @@ const estilos = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   checkBotonActivo: {
-    backgroundColor: '#90C7A1', // 🎨 Verde pastel cuando asistió
+    backgroundColor: '#90C7A1', 
     borderColor: '#90C7A1',
   },
   checkTexto: {
@@ -318,9 +420,8 @@ const estilos = StyleSheet.create({
     fontWeight: '700',
   },
   checkTextoActivo: {
-    color: '#143343', // Mantiene la legibilidad del tilde oscuro
+    color: '#143343', 
   },
-  // 🚀 BOTÓN FLOATING SUMAR EN VERDE PASTEL
   botonFlotante: {
     position: 'absolute',
     bottom: SPACING.lg,
@@ -332,17 +433,85 @@ const estilos = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
   },
   botonFlotanteTexto: {
-    color: '#143343', // Símbolo más oscuro para mejor contraste
+    color: '#143343', 
     fontSize: 32,
     fontWeight: '400',
     lineHeight: 32,
     marginBottom: 4,
+  },
+  // Estilos del Modal E2
+  modalCentrado: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  modalContenedor: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: SPACING.lg,
+    height: '75%',
+  },
+  modalEncabezado: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E3E3E3',
+    paddingBottom: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  modalTitulo: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: '700',
+    color: '#143343',
+  },
+  modalCerrarIcono: {
+    fontSize: 20,
+    color: '#647D8B',
+    padding: 4,
+  },
+  modalScroll: {
+    flex: 1,
+  },
+  modalMetaInfo: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  metaTexto: {
+    fontSize: FONT_SIZE.sm,
+    color: '#1F1F1F',
+    marginBottom: 2,
+  },
+  negrita: {
+    fontWeight: '700',
+    color: '#143343',
+  },
+  labelInput: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: '700',
+    color: '#143343',
+    marginBottom: SPACING.xs,
+  },
+  textAreaInput: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1.5,
+    borderColor: '#647D8B',
+    borderRadius: 8,
+    padding: SPACING.md,
+    fontSize: FONT_SIZE.sm,
+    color: '#1F1F1F',
+    minHeight: 120,
+    textAlignVertical: 'top',
+    marginBottom: SPACING.lg,
+  },
+  modalGuardarBoton: {
+    backgroundColor: '#90C7A1',
+    marginBottom: SPACING.xl,
   },
 });
 
