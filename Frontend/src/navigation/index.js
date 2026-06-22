@@ -1,4 +1,3 @@
-// src/navigation/index.js
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -22,9 +21,15 @@ import TurnosScreen from '../screens/cliente/TurnosScreen';
 import ReservarTurnoScreen from '../screens/cliente/ReservarTurnoScreen';
 import PerfilModal from '../screens/cliente/PerfilModal';
 
-// Pantallas de admin/vet
+// Pantallas de admin/vet previas
 import AgendaAdminScreen from '../screens/admin/AgendaAdminScreen';
 import CrearTurnoAdminScreen from '../screens/admin/CrearTurnoAdminScreen';
+
+// 🚀 NUEVAS PANTALLAS AGREGADAS
+import AltaVeterinarioScreen from '../screens/admin/AltaVeterinarioScreen';
+import ListaVeterinariosScreen from '../screens/admin/ListaVeterinariosScreen';
+import AgendaVeterinarioScreen from '../screens/veterinario/AgendaVeterinarioScreen';
+import HistorialMascotaScreen from '../screens/veterinario/HistorialMascotaScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -116,17 +121,29 @@ const Navegacion = () => {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Registro" component={RegistroScreen} />
           </>
-        ) : usuario.rol === ROLES.VETERINARIO ? (
-          // Flujo de administrador/veterinario
+        ) : usuario.rol === ROLES.ADMIN ? (
+          // 🔥 NUEVO: Flujo exclusivo para el Administrador
           <>
             <Stack.Screen name="AgendaAdmin" component={AgendaAdminScreen} />
+            <Stack.Screen name="AltaVeterinario" component={AltaVeterinarioScreen} />
+            <Stack.Screen name="ListaVeterinarios" component={ListaVeterinariosScreen} />
+            <Stack.Screen name="CrearTurnoAdmin" component={CrearTurnoAdminScreen} />
             <Stack.Screen
               name="PerfilModal"
               component={PerfilModal}
               options={{ presentation: 'modal' }}
             />
-            {/* Se agrega la pantalla de creación al stack de veterinario */}
-            <Stack.Screen name="CrearTurnoAdmin" component={CrearTurnoAdminScreen} />
+          </>
+        ) : usuario.rol === ROLES.VETERINARIO ? (
+          // 🔥 NUEVO: Flujo exclusivo para el Veterinario Clínico
+          <>
+            <Stack.Screen name="AgendaVeterinario" component={AgendaVeterinarioScreen} />
+            <Stack.Screen name="HistorialMascota" component={HistorialMascotaScreen} />
+            <Stack.Screen
+              name="PerfilModal"
+              component={PerfilModal}
+              options={{ presentation: 'modal' }}
+            />
           </>
         ) : (
           // Flujo de cliente
@@ -151,13 +168,11 @@ const tabEstilos = StyleSheet.create({
     height: 64,
     paddingBottom: SPACING.sm,
     paddingTop: SPACING.sm,
-    ...{
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: -2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 8,
-    },
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 8,
   },
   tabButton: {
     flex: 1,
