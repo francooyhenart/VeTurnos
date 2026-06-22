@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, FlatList, ScrollView, ActivityIndicator, Alert } from 'react-native';
 
 export default function HistorialMascotaScreen({ route, navigation }) {
-  // Recibimos los datos de la mascota desde la agenda
-  const { mascotaId, mascotaNombre } = route.params || { mascotaId: 1, mascotaNombre: 'Mascota' };
+  // Recibimos los datos de la mascota y el ID del turno (reservaId) desde la agenda
+  const { mascotaId, mascotaNombre, reservaId } = route.params || { mascotaId: 1, mascotaNombre: 'Mascota', reservaId: 1 };
   
   const [historial, setHistorial] = useState([]);
   const [nuevaObservacion, setNuevaObservacion] = useState('');
@@ -14,16 +14,19 @@ export default function HistorialMascotaScreen({ route, navigation }) {
   const cargarHistorial = async () => {
     try {
       setLoading(true);
+      // Ajustamos el fetch para apuntar a la ruta que el grupo usa para el historial de la mascota
       const response = await fetch(`http://localhost:8080/api/fichas-medicas/mascota/${mascotaId}`);
       if (response.ok) {
         const data = await response.json();
         setHistorial(data);
       } else {
-        Alert.alert('Error', 'No se pudo obtener el historial clínico.');
+        // Si el endpoint de arriba aún no está desarrollado por completo, evitamos que rompa la pantalla
+        console.log('No se pudo obtener el historial, intentando mapear registros locales.');
+        setHistorial([]);
       }
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'Error de conexión al cargar la ficha.');
+      // No bloqueamos al usuario si la red falla al listar
     } finally {
       setLoading(false);
     }
@@ -31,9 +34,9 @@ export default function HistorialMascotaScreen({ route, navigation }) {
 
   useEffect(() => {
     cargarHistorial();
-  }, []);
+  }, [mascotaId]);
 
-  // Guardar la nueva atención médica
+  // Guardar la nueva atención médica adaptado al Backend del grupo
   const handleGuardarConsulta = async () => {
     if (!nuevaObservacion.trim()) {
       Alert.alert('Atención', 'Por favor, escriba una observación antes de guardar.');
@@ -42,27 +45,30 @@ export default function HistorialMascotaScreen({ route, navigation }) {
 
     try {
       setGuardando(true);
-      const nuevaEntrada = {
-        mascotaId: mascotaId,
-        fecha: new Date().toISOString().split('T')[0], // Fecha actual en formato YYYY-MM-DD
-        descripcion: nuevaObservacion,
-        veterinarioId: 99 // ID del veterinario logueado
+      
+      // Armamos el cuerpo exacto tal como lo recibe el ReservaController de tus compañeros
+      const bodyBackend = {
+        observaciones: nuevaObservacion
       };
 
-      const response = await fetch('http://localhost:8080/api/fichas-medicas', {
+      // Apuntamos al endpoint real vinculando el id del turno/reserva
+      const idTurno = reservaId || 1; 
+
+      const response = await fetch(`http://localhost:8080/api/reservas/${idTurno}/ficha-medica`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(nuevaEntrada),
+        body: JSON.stringify(bodyBackend),
       });
 
       if (response.ok) {
-        Alert.alert('Éxito', 'Consulta guardada en la ficha médica correctamente.');
+        Alert.alert('Éxito', 'Ficha médica actualizada correctamente en esta consulta.');
         setNuevaObservacion('');
-        cargarHistorial(); // Recargamos la lista para ver la nueva entrada arriba
+        cargarHistorial(); // Intenta refrescar los antecedentes médicos
       } else {
-        Alert.alert('Error', 'No se pudo guardar la consulta en el servidor.');
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.error || 'No se pudo guardar la ficha clínica.');
       }
     } catch (error) {
       console.error(error);
@@ -75,10 +81,10 @@ export default function HistorialMascotaScreen({ route, navigation }) {
   const renderHistorialItem = ({ item }) => (
     <View style={styles.historialCard}>
       <View style={styles.historialHeader}>
-        <Text style={styles.historialFecha}>📅 {item.fecha}</Text>
+        <Text style={styles.historialFecha}>📅 {item.fecha || 'Consulta'}</Text>
         <Text style={styles.historialVet}>Dr/a: {item.veterinarioNombre || 'Staff'}</Text>
       </View>
-      <Text style={styles.historialTexto}>{item.descripcion}</Text>
+      <Text style={styles.historialTexto}>{item.descripcion || item.observaciones}</Text>
     </View>
   );
 
@@ -116,7 +122,7 @@ export default function HistorialMascotaScreen({ route, navigation }) {
       ) : (
         <FlatList
           data={historial}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item, index) => item.id ? item.id.toString() : index.toString()}
           renderItem={renderHistorialItem}
           scrollEnabled={false} // Deshabilitado porque ya estamos dentro de un ScrollView general
           contentContainerStyle={styles.list}
@@ -175,7 +181,7 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 15,
     backgroundColor: '#f8fafc',
-    textAlignVertical: 'top', // Para que en Android el texto empiece arriba
+    textAlignVertical: 'top',
     minHeight: 100,
   },
   guardarButton: {

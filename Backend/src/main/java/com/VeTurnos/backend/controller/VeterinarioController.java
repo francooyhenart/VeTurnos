@@ -37,4 +37,18 @@ public class VeterinarioController {
             return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    /**
+     * Endpoint REST para dar de alta un nuevo veterinario desde el panel de Admin.
+     */
+    @PostMapping
+    public ResponseEntity<?> registrarVeterinario(@RequestBody Map<String, Object> datosVeterinario) {
+        try {
+            Map<String, Object> nuevoVet = veterinarioService.registrarNuevoVeterinario(datosVeterinario);
+            return new ResponseEntity<>(nuevoVet, HttpStatus.CREATED);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "No se pudo registrar al profesional: " + e.getMessage());
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+    }
 }
