@@ -105,6 +105,7 @@ const AgendaAdminScreen = ({ navigation }) => {
     } catch (e) {
       setError(e.message || 'Error al cargar la agenda.');
     } finally {
+      setAgenda([]); // Evita bloqueos visuales si la API no está arriba
       setCargando(false);
     }
   }, [fecha]);
@@ -144,9 +145,8 @@ const AgendaAdminScreen = ({ navigation }) => {
 
     setGuardandoFicha(true);
     try {
-      await guardarObservacionesClinicas(turnoSeleccionado.id, { observaciones: observaciones.trim() });
+      await guardarObservationsClinicas(turnoSeleccionado.id, { observaciones: observaciones.trim() });
       
-      // Si el turno estaba pendiente, automáticamente lo pasamos a completado/asistido
       if (turnoSeleccionado.estado === 'PENDIENTE') {
         await registrarAsistencia(turnoSeleccionado.id, 'COMPLETADO');
       }
@@ -166,7 +166,10 @@ const AgendaAdminScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={estilos.safeArea}>
       <View style={estilos.encabezado}>
-        <Text style={estilos.saludo}>Hola, {nombre}</Text>
+        <View>
+          <Text style={estilos.saludo}>Hola, {nombre}</Text>
+          <Text style={estilos.subSaludo}>Panel de Control General</Text>
+        </View>
         <TouchableOpacity
           style={estilos.avatarBoton}
           onPress={() => navigation.navigate('PerfilModal')}
@@ -178,8 +181,27 @@ const AgendaAdminScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
+      {/* 🚀 NUEVO PANEL DE ACCESOS RÁPIDOS PARA EL ADMIN */}
+      <View style={estilos.panelAdminContenedor}>
+        <TouchableOpacity 
+          style={estilos.adminCardBoton}
+          onPress={() => navigation.navigate('AltaVeterinario')}
+        >
+          <Text style={estilos.adminBotonIcono}>➕🥼</Text>
+          <Text style={estilos.adminBotonTexto}>Alta Profesional</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={estilos.adminCardBoton}
+          onPress={() => navigation.navigate('ListaVeterinarios')}
+        >
+          <Text style={estilos.adminBotonIcono}>📋🩺</Text>
+          <Text style={estilos.adminBotonTexto}>Cartilla Médica</Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={estilos.contenido}>
-        <Text style={estilos.seccionTitulo}>Agenda</Text>
+        <Text style={estilos.seccionTitulo}>Agenda de Turnos</Text>
 
         <View style={estilos.fechaNavegador}>
           <TouchableOpacity
@@ -267,7 +289,7 @@ const AgendaAdminScreen = ({ navigation }) => {
                   placeholder="Escribí acá la evolución, diagnóstico clínico y medicamentos recetados..."
                   placeholderTextColor="#777777"
                   value={observaciones}
-                  onChangeText={setObservaciones}
+                  onChangeText={setObservations}
                 />
 
                 <BotonPrimario
@@ -304,6 +326,40 @@ const estilos = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF', 
   },
+  subSaludo: {
+    fontSize: 12,
+    color: '#90C7A1',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  panelAdminContenedor: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.sm,
+  },
+  adminCardBoton: {
+    backgroundColor: '#E3E3E3',
+    borderRadius: 12,
+    padding: 12,
+    width: '48%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  adminBotonIcono: {
+    fontSize: 22,
+    marginBottom: 4,
+  },
+  adminBotonTexto: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#143343',
+  },
   avatarBoton: {
     minWidth: 48,
     minHeight: 48,
@@ -328,11 +384,11 @@ const estilos = StyleSheet.create({
     padding: SPACING.lg,
   },
   seccionTitulo: {
-    fontSize: FONT_SIZE.xl,
+    fontSize: FONT_SIZE.lg,
     fontWeight: '700',
     color: '#FFFFFF', 
-    textAlign: 'center',
-    marginBottom: SPACING.lg,
+    textAlign: 'left',
+    marginBottom: SPACING.sm,
   },
   fechaNavegador: {
     flexDirection: 'row',
@@ -441,7 +497,6 @@ const estilos = StyleSheet.create({
     lineHeight: 32,
     marginBottom: 4,
   },
-  // Estilos del Modal E2
   modalCentrado: {
     flex: 1,
     justifyContent: 'flex-end',
