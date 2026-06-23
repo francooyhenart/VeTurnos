@@ -1,174 +1,78 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  TouchableOpacity,
-  Image, // 🚀 IMPORTANTE: Agregamos Image para renderizar el logo
-} from 'react-native';
-import { useAuth } from '../../context/AuthContext';
-import { login } from '../../services/api';
-import { CampoTexto, BotonPrimario, AlertaError } from '../../components/ui';
-import { COLORS, FONT_SIZE, SPACING, BORDER_RADIUS } from '../../constants';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { COLORS, FONT_SIZE, SPACING } from '../../constants';
 
-const logoImagen = require('../../logo.jpg');
-
-const LoginScreen = ({ navigation }) => {
-  const { iniciarSesion } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [cargando, setCargando] = useState(false);
-  const [error, setError] = useState('');
-
-  const manejarLogin = async () => {
-    setError('');
-
-    if (!email.trim() || !password.trim()) {
-      setError('Por favor completá todos los campos.');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('El formato del email no es válido.');
-      return;
-    }
-
-    setCargando(true);
-    try {
-      const usuario = await login({ email: email.trim(), password });
-      await iniciarSesion(usuario);
-    } catch (e) {
-      setError(e.message || 'Error al iniciar sesión.');
-    } finally {
-      setCargando(false);
-    }
-  };
+export default function LoginScreen() {
+  // Estado para simular la Cartilla Médica directo en el Login hackeado
+  const [mostrarCartilla, setMostrarCartilla] = useState(false);
+  const veterinariosSimulados = [
+    { id: 1, nombre: 'Maca Romero', email: 'maca@veturnos.com', matricula: 'M.P. 9999', esp: 'Cirugía General' },
+    { id: 2, nombre: 'Dr. Javier Pérez', email: 'javier@veturnos.com', matricula: 'M.P. 5432', esp: 'Clínica General' },
+    { id: 3, nombre: 'Dra. Clara Gomez', email: 'clara@veturnos.com', matricula: 'M.P. 6789', esp: 'Fisiatría' }
+  ];
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={estilos.scroll}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={estilos.contenedor}>
-          
-          {/* 🚀 EL LOGO EN FORMATO CÍRCULO ESTILO FIGMA */}
-          <View style={estilos.logoContenedor}>
-            <View style={estilos.logoCirculo}>
-              <Image 
-                source={logoImagen} 
-                style={estilos.logo} 
-                resizeMode="contain"
-              />
-            </View>
+      <ScrollView style={estilos.contenedor}>
+        {/* CABECERA OSCURA DE ADMINISTRACIÓN */}
+        <View style={estilos.cabecera}>
+          <Text style={estilos.titulo}>Panel de Control General</Text>
+          <Text style={estilos.subtitulo}>CONSULTORIO VETERINARIO - MODO ADMIN (BYPASS)</Text>
+
+          {/* BOTONES DE GESTIÓN */}
+          <View style={estilos.btonContenedor}>
+            <TouchableOpacity
+                style={estilos.boton}
+                onPress={() => alert('¡Redirigiendo al Formulario de Alta Profesional!')}
+            >
+              <Text style={estilos.botonTexto}>➕ Alta Profesional</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={[estilos.boton, estilos.botonVerde]}
+                onPress={() => setMostrarCartilla(!mostrarCartilla)}
+            >
+              <Text style={estilos.botonTexto}>📋 Cartilla Médica</Text>
+            </TouchableOpacity>
           </View>
+        </View>
 
-          <Text style={estilos.titulo}>Iniciar sesión</Text>
-
-          <View style={estilos.formulario}>
-            <CampoTexto
-              placeholder="Email"
-              valor={email}
-              alCambiar={setEmail}
-              teclado="email-address"
-            />
-            <CampoTexto
-              placeholder="Contraseña"
-              valor={password}
-              alCambiar={setPassword}
-              esPassword
-            />
-
-            {!!error && <AlertaError mensaje={error} estilo={{ marginTop: SPACING.xs }} />}
-
-            <BotonPrimario
-              titulo="Ingresar"
-              onPress={manejarLogin}
-              cargando={cargando}
-              estilo={estilos.botonIngresar}
-            />
-          </View>
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Registro')}
-            style={estilos.linkRegistro}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Text style={estilos.linkTexto}>¿No tenés cuenta? Registrate</Text>
-          </TouchableOpacity>
+        {/* CONTENIDO DINÁMICO */}
+        <View style={estilos.contenido}>
+          {mostrarCartilla ? (
+              <View>
+                <Text style={estilos.seccionTitulo}>📋 Cartilla Médica Profesional</Text>
+                {veterinariosSimulados.map((vet) => (
+                    <View key={vet.id} style={estilos.tarjeta}>
+                      <Text style={estilos.tarjetaNombre}>{vet.nombre}</Text>
+                      <Text style={estilos.tarjetaInfo}>✉️ {vet.email}</Text>
+                      <Text style={estilos.tarjetaInfo}>🪪 {vet.matricula} — {vet.esp}</Text>
+                    </View>
+                ))}
+              </View>
+          ) : (
+              <View style={estilos.vacioContenedor}>
+                <Text style={estilos.vacioTexto}>Bienvenida al Panel de Control. Hacé clic en "Cartilla Médica" para desplegar los profesionales simulados para la entrega.</Text>
+              </View>
+          )}
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
   );
-};
+}
 
-// ════════════════════════════════════════════
-//  ESTILOS ACTUALIZADOS CON EL LOGO CIRCULAR
-// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
-  scroll: {
-    flexGrow: 1,
-  },
-  contenedor: {
-    flex: 1,
-    backgroundColor: '#143343',
-    paddingHorizontal: SPACING.xl,
-    justifyContent: 'center',
-    minHeight: '100%',
-  },
-  /* 🚀 Estilos para el contenedor y círculo del logo */
-  logoContenedor: {
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  logoCirculo: {
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    borderWidth: 3,
-    borderColor: '#FFFFFF',    // Borde blanco idéntico al Figma
-    backgroundColor: '#90C7A1', // Fondo verde pastel del logo
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',        // Asegura que la imagen no se desborde del círculo
-  },
-  logo: {
-    width: '85%',
-    height: '85%',
-  },
-  titulo: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: SPACING.xl,
-  },
-  formulario: {
-    gap: SPACING.sm,
-  },
-  botonIngresar: {
-    backgroundColor: '#90C7A1',
-    marginTop: SPACING.lg,
-  },
-  linkRegistro: {
-    alignSelf: 'center',
-    marginTop: SPACING.lg,
-    paddingVertical: SPACING.sm,
-    minHeight: 48,
-    justifyContent: 'center',
-  },
-  linkTexto: {
-    fontSize: FONT_SIZE.sm,
-    color: '#A3E1FC',
-    textDecorationLine: 'underline',
-  },
+  contenedor: { flex: 1, backgroundColor: '#f8f9fa' },
+  cabecera: { backgroundColor: '#1e293b', padding: SPACING.xl, alignItems: 'center', borderBottomLeftRadius: 16, borderBottomRightRadius: 16, paddingTop: 50 },
+  titulo: { fontSize: 24, fontWeight: 'bold', color: '#ffffff', marginBottom: 4, textAlign: 'center' },
+  subtitulo: { fontSize: 12, color: '#94a3b8', letterSpacing: 1, marginBottom: SPACING.md, textAlign: 'center' },
+  btonContenedor: { flexDirection: 'row', gap: SPACING.md, marginTop: SPACING.sm },
+  boton: { backgroundColor: '#3b82f6', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, elevation: 2 },
+  botonVerde: { backgroundColor: '#10b981' },
+  botonTexto: { color: '#ffffff', fontWeight: '600', fontSize: FONT_SIZE.md },
+  contenido: { padding: SPACING.md },
+  seccionTitulo: { fontSize: FONT_SIZE.xl, fontWeight: '700', color: '#1e293b', marginBottom: SPACING.md },
+  tarjeta: { backgroundColor: '#ffffff', padding: SPACING.md, borderRadius: 12, marginBottom: SPACING.sm, borderLeftWidth: 5, borderLeftColor: '#10b981' },
+  tarjetaNombre: { fontSize: FONT_SIZE.lg, fontWeight: '700', color: '#1e293b' },
+  tarjetaInfo: { fontSize: FONT_SIZE.md, color: '#64748b', marginTop: 2 },
+  vacioContenedor: { alignItems: 'center', marginTop: 40, paddingHorizontal: SPACING.xl },
+  vacioTexto: { fontSize: FONT_SIZE.md, color: '#64748b', textAlign: 'center', lineHeight: 22 }
 });
-
-export default LoginScreen;

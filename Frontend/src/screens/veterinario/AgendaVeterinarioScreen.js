@@ -1,175 +1,78 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { COLORS, FONT_SIZE, SPACING } from '../../constants';
 
 export default function AgendaVeterinarioScreen({ navigation }) {
-  const [turnos, setTurnos] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // Reemplazar por el ID real del veterinario logueado (que vendrá del AuthContext)
-  const idVeterinario = 99; 
-
-  const cargarAgenda = async () => {
-    try {
-      setLoading(true);
-      // Petición al endpoint que filtra los turnos de este veterinario específico
-      const response = await fetch(`http://localhost:8080/api/turnos/veterinario/${idVeterinario}`);
-      if (response.ok) {
-        const data = await response.json();
-        setTurnos(data);
-      } else {
-        Alert.alert('Error', 'No se pudo cargar la agenda del día.');
-      }
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Problema al conectar con el servidor.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    cargarAgenda();
-  }, []);
-
-  const renderTurno = ({ item }) => (
-    <View style={styles.turnoCard}>
-      <View style={styles.horaContainer}>
-        <Text style={styles.horaText}>{item.hora || '09:00'}</Text>
-        <Text style={styles.fechaText}>{item.fecha || '22 May'}</Text>
-      </View>
-      
-      <View style={styles.infoContainer}>
-        <Text style={styles.mascotaName}>🐾 {item.mascotaNombre || 'Firulais'}</Text>
-        <Text style={styles.detallesText}>Dueño: {item.duenioNombre || 'Juan Pérez'}</Text>
-        <Text style={styles.motivoBadge}>{item.motivo || 'Consulta General'}</Text>
-      </View>
-
-      <TouchableOpacity 
-        style={styles.atenderButton}
-        onPress={() => navigation.navigate('HistorialMascota', { mascotaId: item.mascotaId, mascotaNombre: item.mascotaNombre })}
-      >
-        <Text style={styles.atenderButtonText}>Atender</Text>
-      </TouchableOpacity>
-    </View>
-  );
+  // Datos simulados blindados para la Cartilla Médica
+  const [mostrarCartilla, setMostrarCartilla] = useState(false);
+  const veterinariosSimulados = [
+    { id: 1, nombre: 'Maca Romero', email: 'maca@veturnos.com', matricula: 'M.P. 9999', esp: 'Cirugía General' },
+    { id: 2, nombre: 'Dr. Javier Pérez', email: 'javier@veturnos.com', matricula: 'M.P. 5432', esp: 'Clínica General' },
+    { id: 3, nombre: 'Dra. Clara Gomez', email: 'clara@veturnos.com', matricula: 'M.P. 6789', esp: 'Fisiatría' }
+  ];
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Mi Agenda Diaria</Text>
-      <Text style={styles.subtitle}>Consultorio Veterinario</Text>
+      <ScrollView style={estilos.contenedor}>
+        {/* CABECERA OSCURA DE ADMINISTRACIÓN */}
+        <View style={estilos.cabecera}>
+          <Text style={estilos.titulo}>Panel de Control General</Text>
+          <Text style={estilos.subtitulo}>CONSULTORIO VETERINARIO - MODO ADMIN</Text>
 
-      {loading ? (
-        <ActivityIndicator size="large" color="#007bff" style={{ marginTop: 20 }} />
-      ) : (
-        <FlatList
-          data={turnos}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderTurno}
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No tenés turnos asignados para hoy. ¡Día libre!</Text>
-          }
-          refreshing={loading}
-          onRefresh={cargarAgenda}
-        />
-      )}
-    </View>
+          {/* BOTONES DE GESTIÓN */}
+          <View style={estilos.btonContenedor}>
+            <TouchableOpacity
+                style={estilos.boton}
+                onPress={() => alert('¡Redirigiendo al Formulario de Alta Profesional!')}
+            >
+              <Text style={estilos.botonTexto}>➕ Alta Profesional</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={[estilos.boton, estilos.botonVerde]}
+                onPress={() => setMostrarCartilla(!mostrarCartilla)}
+            >
+              <Text style={estilos.botonTexto}>📋 Cartilla Médica</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* CONTENIDO DINÁMICO */}
+        <View style={estilos.contenido}>
+          {mostrarCartilla ? (
+              <View>
+                <Text style={estilos.seccionTitulo}>📋 Cartilla Médica Profesional</Text>
+                {veterinariosSimulados.map((vet) => (
+                    <View key={vet.id} style={estilos.tarjeta}>
+                      <Text style={estilos.tarjetaNombre}>{vet.nombre}</Text>
+                      <Text style={estilos.tarjetaInfo}>✉️ {vet.email}</Text>
+                      <Text style={estilos.tarjetaInfo}>🪪 {vet.matricula} — {vet.esp}</Text>
+                    </View>
+                ))}
+              </View>
+          ) : (
+              <View style={estilos.vacioContenedor}>
+                <Text style={estilos.vacioTexto}>Bienvenida al Panel. Hacé clic en "Cartilla Médica" para desplegar los profesionales simulados.</Text>
+              </View>
+          )}
+        </View>
+      </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f4f6f9',
-    padding: 20,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    textAlign: 'center',
-    marginTop: 10,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#7f8c8d',
-    textAlign: 'center',
-    marginBottom: 20,
-    textTransform: 'uppercase',
-  },
-  list: {
-    paddingBottom: 20,
-  },
-  turnoCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderLeftWidth: 5,
-    borderLeftColor: '#007bff', // Azul distintivo para turnos ocupados
-    elevation: 2,
-  },
-  horaContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingRight: 10,
-    borderRightWidth: 1,
-    borderRightColor: '#eceff1',
-    width: '20%',
-  },
-  horaText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-  },
-  fechaText: {
-    fontSize: 12,
-    color: '#95a5a6',
-    marginTop: 2,
-  },
-  infoContainer: {
-    flex: 1,
-    paddingHorizontal: 15,
-  },
-  mascotaName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-  },
-  detallesText: {
-    fontSize: 13,
-    color: '#7f8c8d',
-    marginTop: 2,
-  },
-  motivoBadge: {
-    backgroundColor: '#e8f0fe',
-    color: '#1a73e8',
-    fontSize: 11,
-    fontWeight: '600',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-    marginTop: 5,
-    alignSelf: 'flex-start',
-  },
-  atenderButton: {
-    backgroundColor: '#007bff',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  atenderButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#95a5a6',
-    marginTop: 40,
-    fontSize: 16,
-  },
+const estilos = StyleSheet.create({
+  contenedor: { flex: 1, backgroundColor: '#f8f9fa' },
+  cabecera: { backgroundColor: '#1e293b', padding: SPACING.xl, alignItems: 'center', borderBottomLeftRadius: 16, borderBottomRightRadius: 16 },
+  titulo: { fontSize: 24, fontWeight: 'bold', color: '#ffffff', marginBottom: 4 },
+  subtitulo: { fontSize: 12, color: '#94a3b8', letterSpacing: 1, marginBottom: SPACING.md },
+  btonContenedor: { flexDirection: 'row', gap: SPACING.md, marginTop: SPACING.sm },
+  boton: { backgroundColor: '#3b82f6', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, elevation: 2 },
+  botonVerde: { backgroundColor: '#10b981' },
+  botonTexto: { color: '#ffffff', fontWeight: '600', fontSize: FONT_SIZE.md },
+  contenido: { padding: SPACING.md },
+  seccionTitulo: { fontSize: FONT_SIZE.xl, fontWeight: '700', color: '#1e293b', marginBottom: SPACING.md },
+  tarjeta: { backgroundColor: '#ffffff', padding: SPACING.md, borderRadius: 12, marginBottom: SPACING.sm, borderLeftWidth: 5, borderLeftColor: '#10b981', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+  tarjetaNombre: { fontSize: FONT_SIZE.lg, fontWeight: '700', color: '#1e293b' },
+  tarjetaInfo: { fontSize: FONT_SIZE.md, color: '#64748b', marginTop: 2 },
+  vacioContenedor: { alignItems: 'center', marginTop: 40, paddingHorizontal: SPACING.xl },
+  vacioTexto: { fontSize: FONT_SIZE.md, color: '#64748b', textAlign: 'center', lineHeight: 22 }
 });

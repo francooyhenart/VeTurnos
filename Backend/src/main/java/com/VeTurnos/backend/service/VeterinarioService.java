@@ -38,4 +38,12 @@ public class VeterinarioService {
             return dto;
         }).collect(Collectors.toList());
     }
+    public java.util.Map<String, Object> registrarNuevoVeterinario(java.util.Map<String, Object> datos) {
+        // Método puente temporal para que compile y reciba el alta del Frontend
+        java.util.Map<String, Object> simulado = new java.util.HashMap<>(datos);
+        if (!simulado.containsKey("id")) {
+            simulado.put("id", 99L); // Le asignamos un ID temporal de prueba
+        }
+        return simulado;
+    }
 }

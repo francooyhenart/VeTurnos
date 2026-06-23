@@ -14,7 +14,7 @@ import {
   Alert,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-// 🚀 E2: Importamos guardarObservacionesClinicas para la Ficha Médica
+// 🚀 E2: Importamos guardarObservacionesClinicas con su nombre correcto
 import { obtenerAgenda, registrarAsistencia, guardarObservacionesClinicas } from '../../services/api';
 import {
   CargandoPantalla,
@@ -50,7 +50,6 @@ const ItemAgenda = ({ reserva, onMarcar, onAbrirConsulta }) => {
   const completado = reserva.estado === 'COMPLETADO' || reserva.estado === 'ASISTIDO';
 
   return (
-    // 🚀 E2: Al presionar la tarjeta abrimos el modal para escribir las observaciones clínicas
     <TouchableOpacity 
       style={estilos.itemTurno} 
       onPress={() => onAbrirConsulta(reserva)}
@@ -74,7 +73,7 @@ const ItemAgenda = ({ reserva, onMarcar, onAbrirConsulta }) => {
         accessibilityLabel={completado ? 'Asistencia registrada' : 'Marcar asistencia'}
         accessibilityRole="button"
       >
-        <Text style={[estilos.checkTexto, completado && estilos.checkTextoActivo]}>✓</Text>
+        <Text style={[estilos.checkTexto, completado && estilos.checkBotonActivo]}></Text>
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -87,7 +86,7 @@ const AgendaAdminScreen = ({ navigation }) => {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
 
-  // 🚀 E2: Estados para el modal de evolución clínica
+  // 🚀 E2: Estados en español para el modal de evolución clínica
   const [modalVisible, setModalVisible] = useState(false);
   const [turnoSeleccionado, setTurnoSeleccionado] = useState(null);
   const [observaciones, setObservaciones] = useState('');
@@ -105,7 +104,6 @@ const AgendaAdminScreen = ({ navigation }) => {
     } catch (e) {
       setError(e.message || 'Error al cargar la agenda.');
     } finally {
-      setAgenda([]); // Evita bloqueos visuales si la API no está arriba
       setCargando(false);
     }
   }, [fecha]);
@@ -129,14 +127,12 @@ const AgendaAdminScreen = ({ navigation }) => {
     }
   };
 
-  // 🚀 E2: Abre el panel de redacción para la historia clínica
   const manejarAbrirConsulta = (reserva) => {
     setTurnoSeleccionado(reserva);
     setObservaciones(reserva.observaciones || '');
     setModalVisible(true);
   };
 
-  // 🚀 E2: Envía el diagnóstico/tratamiento al backend de Spring Boot
   const manejarGuardarFicha = async () => {
     if (!observaciones.trim()) {
       Alert.alert('Datos obligatorios', 'Por favor, ingresá las anotaciones del diagnóstico antes de guardar.');
@@ -145,7 +141,8 @@ const AgendaAdminScreen = ({ navigation }) => {
 
     setGuardandoFicha(true);
     try {
-      await guardarObservationsClinicas(turnoSeleccionado.id, { observaciones: observaciones.trim() });
+      // ✅ Sincronizado con el nombre correcto de la API
+      await guardarObservacionesClinicas(turnoSeleccionado.id, { observaciones: observaciones.trim() });
       
       if (turnoSeleccionado.estado === 'PENDIENTE') {
         await registrarAsistencia(turnoSeleccionado.id, 'COMPLETADO');
@@ -181,7 +178,7 @@ const AgendaAdminScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* 🚀 NUEVO PANEL DE ACCESOS RÁPIDOS PARA EL ADMIN */}
+      {/* 🚀 PANEL DE ACCESOS RÁPIDOS - Sincronizado exactamente con las rutas del Index */}
       <View style={estilos.panelAdminContenedor}>
         <TouchableOpacity 
           style={estilos.adminCardBoton}
@@ -252,7 +249,7 @@ const AgendaAdminScreen = ({ navigation }) => {
         <Text style={estilos.botonFlotanteTexto}>+</Text>
       </TouchableOpacity>
 
-      {/* 🚀 E2: MODAL NATIVO PARA REGISTRO DE FICHA MÉDICA */}
+      {/* 🚀 MODAL NATIVO PARA REGISTRO DE FICHA MÉDICA */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -267,7 +264,7 @@ const AgendaAdminScreen = ({ navigation }) => {
             <View style={estilos.modalContenedor}>
               <View style={estilos.modalEncabezado}>
                 <Text style={estilos.modalTitulo}>Ficha Clínica</Text>
-                <TouchableOpacity onPress={() => setModalVisible(false)} minWidth={48} minHeight={48}>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
                   <Text style={estilos.modalCerrarIcono}>✕</Text>
                 </TouchableOpacity>
               </View>
@@ -289,7 +286,7 @@ const AgendaAdminScreen = ({ navigation }) => {
                   placeholder="Escribí acá la evolución, diagnóstico clínico y medicamentos recetados..."
                   placeholderTextColor="#777777"
                   value={observaciones}
-                  onChangeText={setObservations}
+                  onChangeText={setObservaciones} // ✅ Corregido a español
                 />
 
                 <BotonPrimario
@@ -308,266 +305,48 @@ const AgendaAdminScreen = ({ navigation }) => {
 };
 
 const estilos = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#143343', 
-  },
-  encabezado: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#143343',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    paddingTop: SPACING.xl,
-  },
-  saludo: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: '700',
-    color: '#FFFFFF', 
-  },
-  subSaludo: {
-    fontSize: 12,
-    color: '#90C7A1',
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  panelAdminContenedor: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
-    marginBottom: SPACING.sm,
-  },
-  adminCardBoton: {
-    backgroundColor: '#E3E3E3',
-    borderRadius: 12,
-    padding: 12,
-    width: '48%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  adminBotonIcono: {
-    fontSize: 22,
-    marginBottom: 4,
-  },
-  adminBotonTexto: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#143343',
-  },
-  avatarBoton: {
-    minWidth: 48,
-    minHeight: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#E3E3E3',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarInicial: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: '700',
-    color: '#143343',
-  },
-  contenido: {
-    flex: 1,
-    padding: SPACING.lg,
-  },
-  seccionTitulo: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: '700',
-    color: '#FFFFFF', 
-    textAlign: 'left',
-    marginBottom: SPACING.sm,
-  },
-  fechaNavegador: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#E3E3E3', 
-    borderRadius: 8,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.md,
-    minHeight: 52,
-  },
-  fechaBoton: {
-    minWidth: 48,
-    minHeight: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fechaFlecha: {
-    fontSize: 28,
-    color: '#1F1F1F',
-    fontWeight: '400',
-  },
-  fechaTexto: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '700',
-    color: '#1F1F1F',
-  },
-  lista: {
-    paddingBottom: SPACING.xl,
-  },
-  itemTurno: {
-    backgroundColor: '#E3E3E3',
-    borderRadius: 12,
-    paddingVertical: 12,          
-    paddingHorizontal: SPACING.md,
-    marginVertical: 4,
-    flexDirection: 'row',          
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  infoContenedor: {
-    flex: 1,
-    paddingRight: SPACING.sm,
-  },
-  itemHora: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '700',
-    color: '#143343', 
-  },
-  itemNombre: {
-    fontSize: FONT_SIZE.sm,
-    color: '#1F1F1F',
-    fontWeight: '500',
-    marginTop: 1,
-  },
-  itemMascota: {
-    fontSize: FONT_SIZE.sm,
-    color: '#555555',
-    marginTop: 1,
-  },
-  itemFichaStatus: {
-    fontSize: 12,
-    color: '#3A4D40',
-    fontWeight: '700',
-    marginTop: 4,
-  },
-  checkBoton: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: '#143343',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-  },
-  checkBotonActivo: {
-    backgroundColor: '#90C7A1', 
-    borderColor: '#90C7A1',
-  },
-  checkTexto: {
-    fontSize: 20,
-    color: '#143343',
-    fontWeight: '700',
-  },
-  checkTextoActivo: {
-    color: '#143343', 
-  },
-  botonFlotante: {
-    position: 'absolute',
-    bottom: SPACING.lg,
-    right: SPACING.lg,
-    backgroundColor: '#90C7A1', 
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 5,
-  },
-  botonFlotanteTexto: {
-    color: '#143343', 
-    fontSize: 32,
-    fontWeight: '400',
-    lineHeight: 32,
-    marginBottom: 4,
-  },
-  modalCentrado: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  modalContenedor: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: SPACING.lg,
-    height: '75%',
-  },
-  modalEncabezado: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E3E3E3',
-    paddingBottom: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  modalTitulo: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: '700',
-    color: '#143343',
-  },
-  modalCerrarIcono: {
-    fontSize: 20,
-    color: '#647D8B',
-    padding: 4,
-  },
-  modalScroll: {
-    flex: 1,
-  },
-  modalMetaInfo: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-  },
-  metaTexto: {
-    fontSize: FONT_SIZE.sm,
-    color: '#1F1F1F',
-    marginBottom: 2,
-  },
-  negrita: {
-    fontWeight: '700',
-    color: '#143343',
-  },
-  labelInput: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: '700',
-    color: '#143343',
-    marginBottom: SPACING.xs,
-  },
-  textAreaInput: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1.5,
-    borderColor: '#647D8B',
-    borderRadius: 8,
-    padding: SPACING.md,
-    fontSize: FONT_SIZE.sm,
-    color: '#1F1F1F',
-    minHeight: 120,
-    textAlignVertical: 'top',
-    marginBottom: SPACING.lg,
-  },
-  modalGuardarBoton: {
-    backgroundColor: '#90C7A1',
-    marginBottom: SPACING.xl,
-  },
+  safeArea: { flex: 1, backgroundColor: '#143343' },
+  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#143343', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, paddingTop: Platform.OS === 'ios' ? SPACING.md : SPACING.xl },
+  saludo: { fontSize: FONT_SIZE.xl, fontWeight: '700', color: '#FFFFFF' },
+  subSaludo: { fontSize: 12, color: '#90C7A1', fontWeight: '500', marginTop: 2 },
+  panelAdminContenedor: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: SPACING.lg, marginBottom: SPACING.sm },
+  adminCardBoton: { backgroundColor: '#E3E3E3', borderRadius: 12, padding: 12, width: '48%', alignItems: 'center', justifyContent: 'center', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+  adminBotonIcono: { fontSize: 22, marginBottom: 4 },
+  adminBotonTexto: { fontSize: 13, fontWeight: '700', color: '#143343' },
+  avatarBoton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#E3E3E3', alignItems: 'center', justifyContent: 'center' },
+  avatarInicial: { fontSize: FONT_SIZE.lg, fontWeight: '700', color: '#143343' },
+  contenido: { flex: 1, padding: SPACING.lg },
+  seccionTitulo: { fontSize: FONT_SIZE.lg, fontWeight: '700', color: '#FFFFFF', textAlign: 'left', marginBottom: SPACING.sm },
+  fechaNavegador: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#E3E3E3', borderRadius: 8, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, marginBottom: SPACING.md, minHeight: 52 },
+  fechaBoton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  fechaFlecha: { fontSize: 28, color: '#1F1F1F', fontWeight: '400' },
+  fechaTexto: { fontSize: FONT_SIZE.md, fontWeight: '700', color: '#1F1F1F' },
+  lista: { paddingBottom: SPACING.xl },
+  itemTurno: { backgroundColor: '#E3E3E3', borderRadius: 12, paddingVertical: 12, paddingHorizontal: SPACING.md, marginVertical: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  infoContenedor: { flex: 1, paddingRight: SPACING.sm },
+  itemHora: { fontSize: FONT_SIZE.md, fontWeight: '700', color: '#143343' },
+  itemNombre: { fontSize: FONT_SIZE.sm, color: '#1F1F1F', fontWeight: '500', marginTop: 1 },
+  itemMascota: { fontSize: FONT_SIZE.sm, color: '#555555', marginTop: 1 },
+  itemFichaStatus: { fontSize: 12, color: '#3A4D40', fontWeight: '700', marginTop: 4 },
+  checkBoton: { width: 44, height: 44, borderRadius: 8, borderWidth: 1.5, borderColor: '#143343', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
+  checkBotonActivo: { backgroundColor: '#90C7A1', borderColor: '#90C7A1' },
+  checkTexto: { fontSize: 20, color: '#143343', fontWeight: '700' },
+  checkTextoActivo: { color: '#143343' },
+  botonFlotante: { position: 'absolute', bottom: SPACING.lg, right: SPACING.lg, backgroundColor: '#90C7A1', width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', elevation: 5 },
+  botonFlotanteTexto: { color: '#143343', fontSize: 32, fontWeight: '400', lineHeight: 32, marginBottom: 4 },
+  modalCentrado: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
+  modalContenedor: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: SPACING.lg, height: '75%' },
+  modalEncabezado: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#E3E3E3', paddingBottom: SPACING.sm, marginBottom: SPACING.md },
+  modalTitulo: { fontSize: FONT_SIZE.lg, fontWeight: '700', color: '#143343' },
+  modalCerrarIcono: { fontSize: 20, color: '#647D8B', padding: 4 },
+  modalScroll: { flex: 1 },
+  modalMetaInfo: { backgroundColor: '#F3F4F6', borderRadius: 8, padding: SPACING.md, marginBottom: SPACING.md },
+  metaTexto: { fontSize: FONT_SIZE.sm, color: '#1F1F1F', marginBottom: 2 },
+  negrita: { fontWeight: '700', color: '#143343' },
+  labelInput: { fontSize: FONT_SIZE.sm, fontWeight: '700', color: '#143343', marginBottom: SPACING.xs },
+  textAreaInput: { backgroundColor: '#F9FAFB', borderWidth: 1.5, borderColor: '#647D8B', borderRadius: 8, padding: SPACING.md, fontSize: FONT_SIZE.sm, color: '#1F1F1F', minHeight: 120, textAlignVertical: 'top', marginBottom: SPACING.lg },
+  modalGuardarBoton: { backgroundColor: '#90C7A1', marginBottom: SPACING.xl },
 });
 
 export default AgendaAdminScreen;
