@@ -39,8 +39,14 @@ const LoginScreen = ({ navigation }) => {
 
     setCargando(true);
     try {
-      const usuario = await login({ email: email.trim(), password });
-      await iniciarSesion(usuario);
+      const respuesta = await login({ email: email.trim(), password });
+      const usuarioSinToken = {
+        id: respuesta.id,
+        nombreCompleto: respuesta.nombreCompleto,
+        email: respuesta.email,
+        rol: respuesta.rol,
+      };
+      await iniciarSesion(usuarioSinToken, respuesta.token);
     } catch (e) {
       setError(e.message || 'Error al iniciar sesión.');
     } finally {

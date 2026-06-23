@@ -1,8 +1,7 @@
-// Reserva.java
+package com.VeTurnos.backend.model;
 
-package com.veturnos.backend.model;
-
-import com.veturnos.backend.enums.EstadoReserva;
+import com.VeTurnos.backend.enums.EstadoReserva;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -22,6 +21,11 @@ public class Reserva {
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "veterinario_id", nullable = true)
+    @JsonIgnore // <-- ESTA ANOTACIÓN EVITA EL BUCLE INFINITO
+    private Veterinario veterinario;
+
     @Column(nullable = false)
     private LocalDateTime fechaHora;
 
@@ -34,61 +38,42 @@ public class Reserva {
     public Reserva() {}
 
     public Reserva(Mascota mascota, Cliente cliente, LocalDateTime fechaHora, Integer duracionMinutos) {
-        if (mascota == null) {
-            throw new IllegalArgumentException("Debe especificar una mascota");
-        }
-        if (cliente == null) {
-            throw new IllegalArgumentException("Debe especificar un cliente");
-        }
-        if (fechaHora == null || fechaHora.isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("La fecha del turno debe ser futura");
-        }
+        if (mascota == null) throw new IllegalArgumentException("Debe especificar una mascota");
+        if (cliente == null) throw new IllegalArgumentException("Debe especificar un cliente");
+        if (fechaHora == null || fechaHora.isBefore(LocalDateTime.now())) throw new IllegalArgumentException("La fecha del turno debe ser futura");
 
         this.mascota = mascota;
         this.cliente = cliente;
         this.fechaHora = fechaHora;
-        this.duracionMinutos = (duracionMinutos != null) ? duracionMinutos : 30; // 30 por defecto
+        this.duracionMinutos = (duracionMinutos != null) ? duracionMinutos : 30;
         this.estado = EstadoReserva.PENDIENTE;
     }
 
-// No se puede asistir si esta cancelado
     public void marcarComoAsistido() {
-        if (this.estado == EstadoReserva.CANCELADO) {
-            throw new IllegalStateException("No se puede marcar como asistido un turno cancelado");
-        }
+        if (this.estado == EstadoReserva.CANCELADO) throw new IllegalStateException("No se puede marcar como asistido un turno cancelado");
         this.estado = EstadoReserva.ASISTIDO;
     }
 
-// No se puede completar si no esta en estado asistido
     public void completar() {
-        if (this.estado != EstadoReserva.ASISTIDO) {
-            throw new IllegalStateException("Solo se pueden completar turnos que fueron asistidos");
-        }
+        if (this.estado != EstadoReserva.ASISTIDO) throw new IllegalStateException("Solo se pueden completar turnos que fueron asistidos");
         this.estado = EstadoReserva.COMPLETADO;
     }
 
-// Penalizacion por cancelacion 24 horas antes del turno
     public boolean requiereRecargoPorCancelacion() {
         return LocalDateTime.now().isAfter(this.fechaHora.minusHours(24));
     }
 
-// Cancelar turnos incompletos o sin ya haber sido cancelados
     public void cancelar() {
-
-        if (this.estado == EstadoReserva.CANCELADO) {
-            throw new IllegalStateException("El turno ya se encuentra cancelado");
-        }
-        if (this.estado == EstadoReserva.COMPLETADO) {
-            throw new IllegalStateException("No se puede cancelar un turno ya completado");
-        }
+        if (this.estado == EstadoReserva.CANCELADO) throw new IllegalStateException("El turno ya se encuentra cancelado");
+        if (this.estado == EstadoReserva.COMPLETADO) throw new IllegalStateException("No se puede cancelar un turno ya completado");
         this.estado = EstadoReserva.CANCELADO;
     }
 
-// Getters
     public Long getId() { return id; }
     public Mascota getMascota() { return mascota; }
     public Cliente getCliente() { return cliente; }
+    public Veterinario getVeterinario() { return veterinario; }
     public LocalDateTime getFechaHora() { return fechaHora; }
     public EstadoReserva getEstado() { return estado; }
     public Integer getDuracionMinutos() { return duracionMinutos; }
-} 
+}

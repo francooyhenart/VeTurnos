@@ -1,5 +1,5 @@
 // RegistroRequest.java
-package com.veturnos.backend.dto;
+package com.VeTurnos.backend.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

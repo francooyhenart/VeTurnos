@@ -1,0 +1,83 @@
+package com.VeTurnos.backend.config;
+
+import com.VeTurnos.backend.service.JwtTokenProvider;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(java.util.Arrays.asList("http://localhost:8081", "http://localhost:8082", "http://localhost:8083", "http://localhost:3000"));
+        configuration.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(java.util.Arrays.asList("*"));
+        configuration.setMaxAge(3600L);
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource, JwtTokenProvider jwtTokenProvider) throws Exception {
+        http.addFilterBefore(
+                new JwtAuthenticationFilter(jwtTokenProvider),
+                UsernamePasswordAuthenticationFilter.class
+        );
+
+        http
+            .cors().configurationSource(corsConfigurationSource)
+            .and()
+            .csrf().disable()
+            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .and()
+            .authorizeHttpRequests()
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                
+                // Rutas públicas
+                .requestMatchers("/api/auth/**").permitAll()
+                
+                // Rutas administrativas (corregido a hasAnyAuthority para evitar problemas con prefijo ROLE_)
+                .requestMatchers("/api/admin/veterinarios/**").hasAnyAuthority("GESTOR_VETERINARIOS", "ADMIN")
+                
+                // Rutas para VETERINARIO
+                .requestMatchers(HttpMethod.GET, "/api/veterinarios/agenda/**").hasAuthority("VETERINARIO")
+                
+                // Rutas para CLIENTE
+                .requestMatchers(HttpMethod.GET, "/api/mascotas/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/mascotas/**").hasAuthority("CLIENTE")
+                .requestMatchers(HttpMethod.PUT, "/api/mascotas/**").hasAuthority("CLIENTE")
+                .requestMatchers(HttpMethod.DELETE, "/api/mascotas/**").hasAuthority("CLIENTE")
+                .requestMatchers("/api/reservas/**").hasAuthority("CLIENTE")
+                
+                .anyRequest().authenticated();
+
+        return http.build();
+    }
+}

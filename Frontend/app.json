@@ -11,7 +11,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -20,6 +22,8 @@
       "package": "com.veturnos.app",
       "minSdkVersion": 26
     },
-    "plugins": []
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

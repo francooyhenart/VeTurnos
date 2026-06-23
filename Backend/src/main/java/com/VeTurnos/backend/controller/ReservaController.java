@@ -1,8 +1,8 @@
-package com.veturnos.backend.controller;
+package com.VeTurnos.backend.controller;
 
-import com.veturnos.backend.dto.ReservaRequest;
-import com.veturnos.backend.dto.ReservaResponse;
-import com.veturnos.backend.service.ReservaService;
+import com.VeTurnos.backend.dto.ReservaRequest;
+import com.VeTurnos.backend.dto.ReservaResponse;
+import com.VeTurnos.backend.service.ReservaService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -91,6 +91,18 @@ public class ReservaController {
         } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "Ocurrió un error inesperado al actualizar el estado de asistencia");
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/veterinario/{veterinarioId}")
+    public ResponseEntity<?> obtenerAgendaPorVeterinario(@PathVariable Long veterinarioId) {
+        try {
+            List<ReservaResponse> response = reservaService.obtenerAgendaPorVeterinario(veterinarioId);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Ocurrió un error inesperado al consultar la agenda del veterinario");
             return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

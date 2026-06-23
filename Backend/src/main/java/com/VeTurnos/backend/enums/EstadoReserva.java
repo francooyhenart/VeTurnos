@@ -1,5 +1,5 @@
 // EstadoReserva.java
 
-package com.veturnos.backend.enums;
+package com.VeTurnos.backend.enums;
 
 public enum EstadoReserva { PENDIENTE, ASISTIDO, COMPLETADO, CANCELADO } 

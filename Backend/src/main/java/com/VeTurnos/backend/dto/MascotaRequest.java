@@ -1,5 +1,5 @@
 // MascotaRequest.java
-package com.veturnos.backend.dto;
+package com.VeTurnos.backend.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

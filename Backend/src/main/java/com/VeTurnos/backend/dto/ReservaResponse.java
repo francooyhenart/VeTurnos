@@ -1,5 +1,5 @@
 // ReservaResponse.java
-package com.veturnos.backend.dto;
+package com.VeTurnos.backend.dto;
 
 import java.time.LocalDateTime;
 

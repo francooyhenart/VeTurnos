@@ -1,8 +1,8 @@
 // ClienteRepository.java
 
-package com.veturnos.backend.repository;
+package com.VeTurnos.backend.repository;
 
-import com.veturnos.backend.model.Cliente;
+import com.VeTurnos.backend.model.Cliente;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ClienteRepository extends JpaRepository<Cliente, Long> {
