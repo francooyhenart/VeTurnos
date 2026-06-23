@@ -26,6 +26,15 @@ import PerfilModal from '../screens/cliente/PerfilModal';
 import AgendaAdminScreen from '../screens/admin/AgendaAdminScreen';
 import CrearTurnoAdminScreen from '../screens/admin/CrearTurnoAdminScreen';
 
+// Pantallas de gestor
+import InicioGestorScreen from '../screens/gestor/InicioGestorScreen';
+import PerfilGestorScreen from '../screens/gestor/PerfilGestorScreen';
+import GestionVeterinariosScreen from '../screens/gestor/GestionVeterinariosScreen';
+import AltaVeterinarioScreen from '../screens/gestor/AltaVeterinarioScreen';
+import DetalleVeterinarioScreen from '../screens/gestor/DetalleVeterinarioScreen';
+import AgendaGestorScreen from '../screens/gestor/AgendaGestorScreen';
+import AgendaVeterinarioScreen from '../screens/gestor/AgendaVeterinarioScreen';
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -100,6 +109,26 @@ const TurnosStack = () => (
   </Stack.Navigator>
 );
 
+// ─── Stack de Gestor de Veterinarios ──────────────────────────
+const GestorStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="InicioGestor" component={InicioGestorScreen} />
+    <Stack.Screen name="PerfilGestor" component={PerfilGestorScreen} />
+    <Stack.Screen name="GestionVeterinarios" component={GestionVeterinariosScreen} />
+    <Stack.Screen name="AltaVeterinario" component={AltaVeterinarioScreen} />
+    <Stack.Screen name="DetalleVeterinario" component={DetalleVeterinarioScreen} />
+    <Stack.Screen name="AgendaGestor" component={AgendaGestorScreen} />
+    <Stack.Screen name="AgendaVeterinario" component={AgendaVeterinarioScreen} />
+    <Stack.Screen name="AgendaAdmin" component={AgendaAdminScreen} />
+    <Stack.Screen name="CrearTurnoAdmin" component={CrearTurnoAdminScreen} />
+    <Stack.Screen
+      name="PerfilModal"
+      component={PerfilModal}
+      options={{ presentation: 'modal' }}
+    />
+  </Stack.Navigator>
+);
+
 // ─── Navegador raíz ───────────────────────────────────────────
 const Navegacion = () => {
   const { usuario, cargando } = useAuth();
@@ -110,14 +139,12 @@ const Navegacion = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!usuario ? (
-          // Flujo de autenticación
           <>
             <Stack.Screen name="Splash" component={SplashScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Registro" component={RegistroScreen} />
           </>
         ) : usuario.rol === ROLES.VETERINARIO ? (
-          // Flujo de administrador/veterinario
           <>
             <Stack.Screen name="AgendaAdmin" component={AgendaAdminScreen} />
             <Stack.Screen
@@ -125,11 +152,11 @@ const Navegacion = () => {
               component={PerfilModal}
               options={{ presentation: 'modal' }}
             />
-            {/* Se agrega la pantalla de creación al stack de veterinario */}
             <Stack.Screen name="CrearTurnoAdmin" component={CrearTurnoAdminScreen} />
           </>
+        ) : usuario.rol === ROLES.GESTOR_VETERINARIOS ? (
+          <Stack.Screen name="GestorStack" component={GestorStack} />
         ) : (
-          // Flujo de cliente
           <>
             <Stack.Screen name="ClienteTabs" component={ClienteTabs} />
             <Stack.Screen

@@ -1,8 +1,8 @@
 // Cliente.java
 
-package com.veturnos.backend.model;
+package com.VeTurnos.backend.model;
 
-import com.veturnos.backend.enums.Rol;
+import com.VeTurnos.backend.enums.Rol;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;

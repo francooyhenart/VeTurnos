@@ -1,8 +1,8 @@
 // Mascota.java
 
-package com.veturnos.backend.model;
+package com.VeTurnos.backend.model;
 
-import com.veturnos.backend.enums.Especie;
+import com.VeTurnos.backend.enums.Especie;
 import jakarta.persistence.*;
 
 @Entity

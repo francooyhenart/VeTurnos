@@ -50,14 +50,20 @@ const RegistroScreen = ({ navigation }) => {
 
     setCargando(true);
     try {
-      const usuario = await registrarCliente({
+      const respuesta = await registrarCliente({
         nombreCompleto: form.nombreCompleto.trim(),
         dni: form.dni.trim(),
         telefono: form.telefono.trim(),
         email: form.email.trim().toLowerCase(),
         password: form.password,
       });
-      await iniciarSesion(usuario);
+      const usuarioSinToken = {
+        id: respuesta.id,
+        nombreCompleto: respuesta.nombreCompleto,
+        email: respuesta.email,
+        rol: respuesta.rol,
+      };
+      await iniciarSesion(usuarioSinToken, respuesta.token);
     } catch (e) {
       setErrorGeneral(e.message || 'Error al registrarse.');
     } finally {

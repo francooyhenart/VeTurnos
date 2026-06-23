@@ -5,18 +5,24 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const AuthContext = createContext(null);
 
 const USER_KEY = '@veturnos_user';
+const TOKEN_KEY = '@veturnos_token';
 
 export const AuthProvider = ({ children }) => {
   const [usuario, setUsuario] = useState(null);
+  const [token, setToken] = useState(null);
   const [cargando, setCargando] = useState(true);
 
   // Al iniciar, revisar si hay sesión guardada
   useEffect(() => {
     const cargarSesion = async () => {
       try {
-        const datos = await AsyncStorage.getItem(USER_KEY);
-        if (datos) {
-          setUsuario(JSON.parse(datos));
+        const datosUsuario = await AsyncStorage.getItem(USER_KEY);
+        const datosToken = await AsyncStorage.getItem(TOKEN_KEY);
+        if (datosUsuario) {
+          setUsuario(JSON.parse(datosUsuario));
+        }
+        if (datosToken) {
+          setToken(datosToken);
         }
       } catch (_) {
         // Si falla la lectura, simplemente no hay sesión
@@ -27,18 +33,22 @@ export const AuthProvider = ({ children }) => {
     cargarSesion();
   }, []);
 
-  const iniciarSesion = useCallback(async (datosUsuario) => {
+  const iniciarSesion = useCallback(async (datosUsuario, tokenJwt) => {
     setUsuario(datosUsuario);
+    setToken(tokenJwt);
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(datosUsuario));
+    await AsyncStorage.setItem(TOKEN_KEY, tokenJwt);
   }, []);
 
   const cerrarSesion = useCallback(async () => {
     setUsuario(null);
+    setToken(null);
     await AsyncStorage.removeItem(USER_KEY);
+    await AsyncStorage.removeItem(TOKEN_KEY);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ usuario, cargando, iniciarSesion, cerrarSesion }}>
+    <AuthContext.Provider value={{ usuario, token, cargando, iniciarSesion, cerrarSesion }}>
       {children}
     </AuthContext.Provider>
   );

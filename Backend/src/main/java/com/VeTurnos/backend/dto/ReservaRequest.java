@@ -1,5 +1,5 @@
 // ReservaRequest.java
-package com.veturnos.backend.dto;
+package com.VeTurnos.backend.dto;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;

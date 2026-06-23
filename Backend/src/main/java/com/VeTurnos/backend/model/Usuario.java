@@ -1,8 +1,8 @@
 // Usuario.java
 
-package com.veturnos.backend.model;
+package com.VeTurnos.backend.model;
 
-import com.veturnos.backend.enums.Rol;
+import com.VeTurnos.backend.enums.Rol;
 import jakarta.persistence.*;
 
 @Entity
@@ -68,4 +68,29 @@ public abstract class Usuario {
     public String getEmail() { return email; }
     public String getPassword() { return password; }
     public Rol getRol() { return rol; }
+
+    public void setNombreCompleto(String nombreCompleto) {
+        if (nombreCompleto == null || nombreCompleto.trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre completo es obligatorio");
+        }
+        this.nombreCompleto = nombreCompleto;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    public void setEmail(String email) {
+        if (email == null || !email.contains("@")) {
+            throw new IllegalArgumentException("El formato del email no es válido");
+        }
+        this.email = email;
+    }
+
+    public void setPassword(String password) {
+        if (password == null || password.length() < 8) {
+            throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres");
+        }
+        this.password = password;
+    }
 } 

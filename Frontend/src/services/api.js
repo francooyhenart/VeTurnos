@@ -1,5 +1,6 @@
 // src/services/api.js
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../constants';
 
 const api = axios.create({
@@ -9,6 +10,22 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// ─── Interceptor de solicitudes para agregar token JWT ───
+api.interceptors.request.use(
+  async (config) => {
+    try {
+      const token = await AsyncStorage.getItem('@veturnos_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (_) {
+      // Si no se puede obtener el token, simplemente continuar sin él
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // ─── Interceptor de respuestas para manejo de errores centralizado ───
 api.interceptors.response.use(
@@ -164,6 +181,131 @@ export const obtenerReservasCliente = async (nombreCliente) => {
   return todas.filter((r) =>
     r.nombreCliente?.toLowerCase().includes(nombreCliente.toLowerCase())
   );
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  GESTOR VETERINARIOS ENDPOINTS  →  /api/admin/veterinarios
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Obtiene la lista de todos los veterinarios.
+ * GET /api/admin/veterinarios
+ * @returns {Promise<VeterinarioResponse[]>}
+ */
+export const obtenerVeterinarios = async () => {
+  const response = await api.get('/admin/veterinarios');
+  return response.data;
+};
+
+/**
+ * Obtiene un veterinario por ID.
+ * GET /api/admin/veterinarios/:id
+ * @param {number} id
+ * @returns {Promise<VeterinarioResponse>}
+ */
+export const obtenerVeterinarioPorId = async (id) => {
+  const response = await api.get(`/admin/veterinarios/${id}`);
+  return response.data;
+};
+
+/**
+ * Obtiene un veterinario por matrícula.
+ * GET /api/admin/veterinarios/matricula/:matricula
+ * @param {string} matricula
+ * @returns {Promise<VeterinarioResponse>}
+ */
+export const obtenerVeterinarioPorMatricula = async (matricula) => {
+  const response = await api.get(`/admin/veterinarios/matricula/${matricula}`);
+  return response.data;
+};
+
+/**
+ * Crea un nuevo veterinario.
+ * POST /api/admin/veterinarios
+ * @param {{ nombreCompleto, dni, telefono, email, password, matricula, especialidad }} data
+ * @returns {Promise<VeterinarioResponse>}
+ */
+export const crearVeterinario = async (data) => {
+  const response = await api.post('/admin/veterinarios', data);
+  return response.data;
+};
+
+/**
+ * Actualiza datos de un veterinario.
+ * PUT /api/admin/veterinarios/:id
+ * @param {number} id
+ * @param {{ nombreCompleto?, telefono?, especialidad? }} data
+ * @returns {Promise<VeterinarioResponse>}
+ */
+export const actualizarVeterinario = async (id, data) => {
+  const response = await api.put(`/admin/veterinarios/${id}`, data);
+  return response.data;
+};
+
+/**
+ * Cambia el estado de administrador de un veterinario.
+ * PATCH /api/admin/veterinarios/:id/admin
+ * @param {number} id
+ * @param {boolean} esAdministrador
+ * @returns {Promise<VeterinarioResponse>}
+ */
+export const cambiarEstadoAdmin = async (id, esAdministrador) => {
+  const response = await api.patch(`/admin/veterinarios/${id}/admin`, {
+    esAdministrador,
+  });
+  return response.data;
+};
+
+/**
+ * Elimina un veterinario.
+ * DELETE /api/admin/veterinarios/:id
+ * @param {number} id
+ * @returns {Promise<{ mensaje: string }>}
+ */
+export const eliminarVeterinario = async (id) => {
+  const response = await api.delete(`/admin/veterinarios/${id}`);
+  return response.data;
+};
+
+/**
+ * Obtiene resumen de todos los veterinarios.
+ * GET /api/admin/veterinarios/resumen/lista
+ * @returns {Promise<Array>}
+ */
+export const obtenerResumenVeterinarios = async () => {
+  const response = await api.get('/admin/veterinarios/resumen/lista');
+  return response.data;
+};
+
+/**
+ * Obtiene estadísticas generales de veterinarios.
+ * GET /api/admin/veterinarios/estadisticas/general
+ * @returns {Promise<{ totalVeterinarios, totalAdministradores, totalReservas }>}
+ */
+export const obtenerEstadisticasVeterinarios = async () => {
+  const response = await api.get('/admin/veterinarios/estadisticas/general');
+  return response.data;
+};
+
+/**
+ * Obtiene la agenda completa de todos los veterinarios.
+ * GET /api/admin/veterinarios/agenda/completa
+ * @returns {Promise<{ totalVeterinarios, totalReservas, veterinarios, reservas }>}
+ */
+export const obtenerAgendaCompleta = async () => {
+  const response = await api.get('/admin/veterinarios/agenda/completa');
+  return response.data;
+};
+
+/**
+ * Obtiene la agenda de un veterinario específico.
+ * GET /api/reservas/veterinario/:veterinarioId
+ * @param {number} veterinarioId
+ * @returns {Promise<ReservaResponse[]>}
+ */
+export const obtenerAgendaVeterinario = async (veterinarioId) => {
+  const response = await api.get(`/reservas/veterinario/${veterinarioId}`);
+  return response.data;
 };
 
 export default api;

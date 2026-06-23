@@ -1,12 +1,12 @@
-package com.veturnos.backend.service;
+package com.VeTurnos.backend.service;
 
-import com.veturnos.backend.dto.MascotaRequest;
-import com.veturnos.backend.dto.MascotaResponse;
-import com.veturnos.backend.enums.Especie;
-import com.veturnos.backend.model.Cliente;
-import com.veturnos.backend.model.Mascota;
-import com.veturnos.backend.repository.ClienteRepository;
-import com.veturnos.backend.repository.MascotaRepository;
+import com.VeTurnos.backend.dto.MascotaRequest;
+import com.VeTurnos.backend.dto.MascotaResponse;
+import com.VeTurnos.backend.enums.Especie;
+import com.VeTurnos.backend.model.Cliente;
+import com.VeTurnos.backend.model.Mascota;
+import com.VeTurnos.backend.repository.ClienteRepository;
+import com.VeTurnos.backend.repository.MascotaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

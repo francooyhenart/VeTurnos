@@ -1,7 +1,7 @@
-package com.veturnos.backend.repository;
+package com.VeTurnos.backend.repository;
 
-import com.veturnos.backend.enums.EstadoReserva;
-import com.veturnos.backend.model.Reserva;
+import com.VeTurnos.backend.enums.EstadoReserva;
+import com.VeTurnos.backend.model.Reserva;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,4 +26,11 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
             @Param("inicio") LocalDateTime inicio,
             @Param("fin") LocalDateTime fin
     );
+
+    // Obtener todas las reservas de un veterinario
+    List<Reserva> findByVeterinario(com.VeTurnos.backend.model.Veterinario veterinario);
+
+    // Obtener todas las reservas de un veterinario por su ID
+    @Query("SELECT r FROM Reserva r WHERE r.veterinario.id = :veterinarioId ORDER BY r.fechaHora ASC")
+    List<Reserva> findByVeterinarioId(@Param("veterinarioId") Long veterinarioId);
 }

@@ -1,5 +1,8 @@
 // Rol.java
+package com.VeTurnos.backend.enums;
 
-package com.veturnos.backend.enums;
-
-public enum Rol { CLIENTE, VETERINARIO } 
+public enum Rol { 
+    CLIENTE, 
+    VETERINARIO, 
+    GESTOR_VETERINARIOS 
+}

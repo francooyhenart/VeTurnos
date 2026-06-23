@@ -273,7 +273,6 @@ const ReservarTurnoScreen = ({ navigation }) => {
         textBoton="Mis Turnos"
         onAccion={() => {
           setModalExito(false);
-          // 🚀 CORREGIDO: goBack() quita el formulario actual sin romper el stack ni desconfigurar el navbar inferior
           navigation.goBack();
         }}
       />

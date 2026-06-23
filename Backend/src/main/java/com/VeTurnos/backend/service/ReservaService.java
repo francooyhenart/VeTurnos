@@ -1,14 +1,14 @@
-package com.veturnos.backend.service;
+package com.VeTurnos.backend.service;
 
-import com.veturnos.backend.dto.ReservaRequest;
-import com.veturnos.backend.dto.ReservaResponse;
-import com.veturnos.backend.enums.EstadoReserva;
-import com.veturnos.backend.model.Cliente;
-import com.veturnos.backend.model.Mascota;
-import com.veturnos.backend.model.Reserva;
-import com.veturnos.backend.repository.ClienteRepository;
-import com.veturnos.backend.repository.MascotaRepository;
-import com.veturnos.backend.repository.ReservaRepository;
+import com.VeTurnos.backend.dto.ReservaRequest;
+import com.VeTurnos.backend.dto.ReservaResponse;
+import com.VeTurnos.backend.enums.EstadoReserva;
+import com.VeTurnos.backend.model.Cliente;
+import com.VeTurnos.backend.model.Mascota;
+import com.VeTurnos.backend.model.Reserva;
+import com.VeTurnos.backend.repository.ClienteRepository;
+import com.VeTurnos.backend.repository.MascotaRepository;
+import com.VeTurnos.backend.repository.ReservaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -123,5 +123,13 @@ public class ReservaService {
                 reserva.getEstado().name(),
                 reserva.getDuracionMinutos()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReservaResponse> obtenerAgendaPorVeterinario(Long veterinarioId) {
+        List<Reserva> reservas = reservaRepository.findByVeterinarioId(veterinarioId);
+        return reservas.stream()
+                .map(this::mapperAResponse)
+                .collect(Collectors.toList());
     }
 }
