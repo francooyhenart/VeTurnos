@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { obtenerAgenda, registrarAsistencia } from '../../services/api';
+import { ROLES } from '../../constants';
 import {
   CargandoPantalla,
   EstadoVacio,
@@ -39,13 +40,19 @@ const formatearHoraRango = (fechaHoraStr, duracionMinutos = 30) => {
   return `De ${formato(inicio)} a ${formato(fin)}`;
 };
 
-// 🚀 TARJETA COMPACTA ADAPTADA AL FLUJO MODERNO
-const ItemAgenda = ({ reserva, onMarcar }) => {
-  const completado = reserva.estado === 'COMPLETADO' || reserva.estado === 'ASISTIDO';
+const badgeConfig = {
+  PENDIENTE: { color: '#E3E3E3', textColor: '#143343', label: 'Pendiente' },
+  ASISTIDO:  { color: '#90C7A1', textColor: '#143343', label: 'Asistido' },
+  COMPLETADO:{ color: '#A3E1FC', textColor: '#143343', label: 'Completado' },
+};
+
+// Para el VET: botón interactivo que alterna PENDIENTE ↔ ASISTIDO
+const ItemAgendaVet = ({ reserva, onMarcar }) => {
+  const asistido = reserva.estado === 'ASISTIDO';
+  const completado = reserva.estado === 'COMPLETADO';
 
   return (
     <View style={estilos.itemTurno}>
-      {/* Contenedor Izquierdo: Datos consolidados */}
       <View style={estilos.infoContenedor}>
         <Text style={estilos.itemHora}>
           {formatearHoraRango(reserva.fechaHora, reserva.duracionMinutos)}
@@ -54,22 +61,46 @@ const ItemAgenda = ({ reserva, onMarcar }) => {
         <Text style={estilos.itemMascota}>Paciente: {reserva.nombreMascota}</Text>
       </View>
 
-      {/* Contenedor Derecho: Botón check optimizado */}
-      <TouchableOpacity
-        style={[estilos.checkBoton, completado && estilos.checkBotonActivo]}
-        onPress={() => onMarcar(reserva)}
-        disabled={completado}
-        accessibilityLabel={completado ? 'Asistencia registrada' : 'Marcar asistencia'}
-        accessibilityRole="button"
-      >
-        <Text style={[estilos.checkTexto, completado && estilos.checkTextoActivo]}>✓</Text>
-      </TouchableOpacity>
+      {completado ? (
+        <View style={[estilos.checkBoton, estilos.checkBotonCompletado]}>
+          <Text style={estilos.checkTextoActivo}>✓✓</Text>
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={[estilos.checkBoton, asistido && estilos.checkBotonActivo]}
+          onPress={() => onMarcar(reserva)}
+          accessibilityLabel={asistido ? 'Desconfirmar asistencia' : 'Confirmar asistencia'}
+          accessibilityRole="button"
+        >
+          <Text style={[estilos.checkTexto, asistido && estilos.checkTextoActivo]}>✓</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
+
+// Para el GESTOR: solo muestra el estado (sin botón interactivo)
+const ItemAgendaGestor = ({ reserva }) => {
+  const cfg = badgeConfig[reserva.estado] || badgeConfig.PENDIENTE;
+  return (
+    <View style={estilos.itemTurno}>
+      <View style={estilos.infoContenedor}>
+        <Text style={estilos.itemHora}>
+          {formatearHoraRango(reserva.fechaHora, reserva.duracionMinutos)}
+        </Text>
+        <Text style={estilos.itemNombre}>Cliente: {reserva.nombreCliente}</Text>
+        <Text style={estilos.itemMascota}>Paciente: {reserva.nombreMascota}</Text>
+      </View>
+      <View style={[estilos.estadoBadge, { backgroundColor: cfg.color }]}>
+        <Text style={[estilos.estadoBadgeTexto, { color: cfg.textColor }]}>{cfg.label}</Text>
+      </View>
     </View>
   );
 };
 
 const AgendaAdminScreen = ({ navigation }) => {
   const { usuario } = useAuth();
+  const esVeterinario = usuario?.rol === ROLES.VETERINARIO;
   const [fecha, setFecha] = useState(new Date());
   const [agenda, setAgenda] = useState([]);
   const [cargando, setCargando] = useState(false);
@@ -81,7 +112,6 @@ const AgendaAdminScreen = ({ navigation }) => {
     try {
       const fechaStr = fecha.toISOString().split('T')[0];
       const data = await obtenerAgenda(fechaStr);
-      // Solo mostrar pendientes y asistidos (no cancelados)
       const filtrados = data.filter((r) => r.estado !== 'CANCELADO');
       filtrados.sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora));
       setAgenda(filtrados);
@@ -92,21 +122,22 @@ const AgendaAdminScreen = ({ navigation }) => {
     }
   }, [fecha]);
 
-  // 🚀 CAMBIO 1: Escucha el cambio dinámico de las flechas del calendario
   useEffect(() => {
     cargarAgenda();
   }, [cargarAgenda]);
 
-  // 🚀 CAMBIO 2: Escucha el foco de navegación incluyendo la función en sus dependencias
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', cargarAgenda);
     return unsubscribe;
   }, [navigation, cargarAgenda]);
 
   const manejarMarcar = async (reserva) => {
-    const nuevoEstado = reserva.estado === 'PENDIENTE' ? 'ASISTIDO' : 'COMPLETADO';
+    // Alterna entre PENDIENTE y ASISTIDO; COMPLETADO es un estado final
+    const nuevoEstado = reserva.estado === 'ASISTIDO' ? 'PENDIENTE' : 'ASISTIDO';
     try {
-      await registrarAsistencia(reserva.id, nuevoEstado);
+      // Si es veterinario, se auto-asigna al turno cuando lo confirma
+      const vetId = esVeterinario ? usuario.id : null;
+      await registrarAsistencia(reserva.id, nuevoEstado, vetId);
       await cargarAgenda();
     } catch (e) {
       setError(e.message || 'Error al actualizar el estado.');
@@ -115,11 +146,23 @@ const AgendaAdminScreen = ({ navigation }) => {
 
   const nombre = usuario?.nombreCompleto?.split(' ')[0] || 'Admin';
 
+  const puedeVolver = navigation.canGoBack();
+
   return (
     <SafeAreaView style={estilos.safeArea}>
-      {/* Encabezado admin unificado oscuro */}
+      {/* Encabezado: con botón volver si es gestor, con saludo si es veterinario */}
       <View style={estilos.encabezado}>
-        <Text style={estilos.saludo}>Hola, {nombre}</Text>
+        {puedeVolver ? (
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={estilos.flechaVolver}>←</Text>
+          </TouchableOpacity>
+        ) : (
+          <Text style={estilos.saludo}>Hola, {nombre}</Text>
+        )}
+        {puedeVolver && <Text style={estilos.tituloEncabezado}>Agenda del Día</Text>}
         <TouchableOpacity
           style={estilos.avatarBoton}
           onPress={() => navigation.navigate('PerfilModal')}
@@ -161,9 +204,13 @@ const AgendaAdminScreen = ({ navigation }) => {
           <FlatList
             data={agenda}
             keyExtractor={(item) => String(item.id)}
-            renderItem={({ item }) => (
-              <ItemAgenda reserva={item} onMarcar={manejarMarcar} />
-            )}
+            renderItem={({ item }) =>
+              esVeterinario ? (
+                <ItemAgendaVet reserva={item} onMarcar={manejarMarcar} />
+              ) : (
+                <ItemAgendaGestor reserva={item} />
+              )
+            }
             contentContainerStyle={estilos.lista}
             ListEmptyComponent={
               <EstadoVacio mensaje="No hay turnos programados para este día." />
@@ -204,7 +251,17 @@ const estilos = StyleSheet.create({
   saludo: {
     fontSize: FONT_SIZE.xl,
     fontWeight: '700',
-    color: '#FFFFFF', // Saludo blanco
+    color: '#FFFFFF',
+  },
+  flechaVolver: {
+    fontSize: FONT_SIZE.xl,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  tituloEncabezado: {
+    fontSize: FONT_SIZE.xl,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   avatarBoton: {
     minWidth: 48,
@@ -318,7 +375,22 @@ const estilos = StyleSheet.create({
     fontWeight: '700',
   },
   checkTextoActivo: {
-    color: '#143343', // Mantiene la legibilidad del tilde oscuro
+    color: '#143343',
+  },
+  checkBotonCompletado: {
+    backgroundColor: '#A3E1FC',
+    borderColor: '#A3E1FC',
+  },
+  estadoBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  estadoBadgeTexto: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   // 🚀 BOTÓN FLOATING SUMAR EN VERDE PASTEL
   botonFlotante: {

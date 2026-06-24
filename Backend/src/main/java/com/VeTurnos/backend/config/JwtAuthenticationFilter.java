@@ -46,7 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // Crear lista de autoridades (roles)
                 List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-                authorities.add(new SimpleGrantedAuthority("ROLE_" + rol)); // Spring requiere "ROLE_" prefix
+                authorities.add(new SimpleGrantedAuthority(rol));
 
                 // Crear token de autenticación
                 UsernamePasswordAuthenticationToken authentication =

@@ -74,7 +74,16 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/mascotas/**").hasAuthority("CLIENTE")
                 .requestMatchers(HttpMethod.PUT, "/api/mascotas/**").hasAuthority("CLIENTE")
                 .requestMatchers(HttpMethod.DELETE, "/api/mascotas/**").hasAuthority("CLIENTE")
-                .requestMatchers("/api/reservas/**").hasAuthority("CLIENTE")
+
+                // Busqueda de clientes (solo gestor)
+                .requestMatchers(HttpMethod.GET, "/api/clientes/**").hasAuthority("GESTOR_VETERINARIOS")
+
+                // Rutas de RESERVAS - gestor y veterinario pueden ver agendas
+                .requestMatchers(HttpMethod.GET, "/api/reservas/veterinario/**").hasAnyAuthority("GESTOR_VETERINARIOS", "VETERINARIO")
+                .requestMatchers(HttpMethod.GET, "/api/reservas/agenda").hasAnyAuthority("GESTOR_VETERINARIOS", "VETERINARIO", "CLIENTE")
+                .requestMatchers(HttpMethod.PATCH, "/api/reservas/**").hasAnyAuthority("GESTOR_VETERINARIOS", "VETERINARIO")
+                .requestMatchers(HttpMethod.POST, "/api/reservas/**").hasAnyAuthority("CLIENTE", "GESTOR_VETERINARIOS")
+                .requestMatchers(HttpMethod.DELETE, "/api/reservas/**").hasAnyAuthority("CLIENTE", "GESTOR_VETERINARIOS")
                 
                 .anyRequest().authenticated();
 

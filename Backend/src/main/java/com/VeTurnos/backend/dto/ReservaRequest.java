@@ -19,6 +19,8 @@ public class ReservaRequest {
 
     private Integer duracionMinutos;
 
+    private Long veterinarioId;
+
     // Getters y Setters
     public Long getMascotaId() { return mascotaId; }
     public void setMascotaId(Long mascotaId) { this.mascotaId = mascotaId; }
@@ -31,4 +33,7 @@ public class ReservaRequest {
 
     public Integer getDuracionMinutos() { return duracionMinutos; }
     public void setDuracionMinutos(Integer duracionMinutos) { this.duracionMinutos = duracionMinutos; }
+
+    public Long getVeterinarioId() { return veterinarioId; }
+    public void setVeterinarioId(Long veterinarioId) { this.veterinarioId = veterinarioId; }
 }

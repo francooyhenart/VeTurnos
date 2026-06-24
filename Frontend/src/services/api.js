@@ -72,6 +72,21 @@ export const login = async (data) => {
 };
 
 // ═══════════════════════════════════════════
+//  CLIENTES ENDPOINTS  →  /api/clientes
+// ═══════════════════════════════════════════
+
+/**
+ * Busca clientes por nombre o DNI (solo gestor).
+ * GET /api/clientes/buscar?q=xxx
+ * @param {string} q - texto de búsqueda (nombre o DNI)
+ * @returns {Promise<Array<{ id, nombreCompleto, dni, email }>>}
+ */
+export const buscarClientes = async (q) => {
+  const response = await api.get('/clientes/buscar', { params: { q } });
+  return response.data;
+};
+
+// ═══════════════════════════════════════════
 //  MASCOTAS ENDPOINTS  →  /api/mascotas
 // ═══════════════════════════════════════════
 
@@ -142,10 +157,10 @@ export const obtenerAgenda = async (fecha) => {
  * @param {'ASISTIDO'|'COMPLETADO'} estado
  * @returns {Promise<ReservaResponse>}
  */
-export const registrarAsistencia = async (id, estado) => {
-  const response = await api.patch(`/reservas/${id}/asistencia`, null, {
-    params: { estado },
-  });
+export const registrarAsistencia = async (id, estado, veterinarioId) => {
+  const params = { estado };
+  if (veterinarioId) params.veterinarioId = veterinarioId;
+  const response = await api.patch(`/reservas/${id}/asistencia`, null, { params });
   return response.data;
 };
 

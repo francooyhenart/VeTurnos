@@ -26,11 +26,6 @@ const DetalleVeterinarioScreen = ({ navigation, route }) => {
     nombreCompleto: veterinario.nombreCompleto || '',
     telefono: veterinario.telefono || '',
     especialidad: veterinario.especialidad || '',
-    // Campos obligatorios que faltaban para evitar el error 400 del Backend:
-    dni: veterinario.dni || '',
-    email: veterinario.email || '',
-    matricula: veterinario.matricula || '',
-    password: '' 
   });
   const [errores, setErrores] = useState({});
   const [errorGeneral, setErrorGeneral] = useState('');
@@ -52,19 +47,14 @@ const DetalleVeterinarioScreen = ({ navigation, route }) => {
 
   const manejarGuardar = async () => {
     setErrorGeneral('');
-    
-    // Primero validamos los campos obligatorios
-    if (!validar()) {
-      setErrorGeneral('hay un error en los datos fijarse formato de dni');
-      return;
-    }
+    if (!validar()) return;
 
     setCargando(true);
     try {
       await actualizarVeterinario(veterinario.id, form);
       setModo('vista');
     } catch (e) {
-      setErrorGeneral('hay un error en los datos fijarse formato de dni');
+      setErrorGeneral(e.message || 'Error al guardar los cambios');
     } finally {
       setCargando(false);
     }
@@ -100,11 +90,11 @@ const DetalleVeterinarioScreen = ({ navigation, route }) => {
         <ScrollView contentContainerStyle={estilos.scroll}>
           {modo === 'vista' ? (
             <>
-              <View style={estilos.tarjetaInfo}><Text style={estilos.label}>Nombre</Text><Text style={estilos.valor}>{form.nombreCompleto}</Text></View>
-              <View style={estilos.tarjetaInfo}><Text style={estilos.label}>Matrícula</Text><Text style={estilos.valor}>{form.matricula}</Text></View>
-              <View style={estilos.tarjetaInfo}><Text style={estilos.label}>Email</Text><Text style={estilos.valor}>{form.email}</Text></View>
-              <View style={estilos.tarjetaInfo}><Text style={estilos.label}>Teléfono</Text><Text style={estilos.valor}>{form.telefono || 'No especificado'}</Text></View>
-              <View style={estilos.tarjetaInfo}><Text style={estilos.label}>Especialidad</Text><Text style={estilos.valor}>{form.especialidad || 'No especificada'}</Text></View>
+              <View style={estilos.tarjetaInfo}><Text style={estilos.label}>Nombre</Text><Text style={estilos.valor}>{veterinario.nombreCompleto}</Text></View>
+              <View style={estilos.tarjetaInfo}><Text style={estilos.label}>Matrícula</Text><Text style={estilos.valor}>{veterinario.matricula}</Text></View>
+              <View style={estilos.tarjetaInfo}><Text style={estilos.label}>Email</Text><Text style={estilos.valor}>{veterinario.email}</Text></View>
+              <View style={estilos.tarjetaInfo}><Text style={estilos.label}>Teléfono</Text><Text style={estilos.valor}>{veterinario.telefono || 'No especificado'}</Text></View>
+              <View style={estilos.tarjetaInfo}><Text style={estilos.label}>Especialidad</Text><Text style={estilos.valor}>{veterinario.especialidad || 'No especificada'}</Text></View>
               <TouchableOpacity style={estilos.botonAgenda} onPress={() => navigation.navigate('AgendaVeterinario', { veterinario })}>
                 <Text style={estilos.botonAgendaTexto}>📅 Ver Agenda</Text>
               </TouchableOpacity>
@@ -116,12 +106,8 @@ const DetalleVeterinarioScreen = ({ navigation, route }) => {
             <View style={estilos.formulario}>
               <Text style={estilos.tituloEdicion}>Editar Veterinario</Text>
               <CampoTexto placeholder="Nombre Completo" valor={form.nombreCompleto} alCambiar={actualizar('nombreCompleto')} error={errores.nombreCompleto} />
-              <CampoTexto placeholder="DNI" valor={form.dni} alCambiar={actualizar('dni')} />
-              <CampoTexto placeholder="Email" valor={form.email} alCambiar={actualizar('email')} />
-              <CampoTexto placeholder="Matrícula" valor={form.matricula} alCambiar={actualizar('matricula')} />
               <CampoTexto placeholder="Teléfono" valor={form.telefono} alCambiar={actualizar('telefono')} teclado="phone-pad" />
               <CampoTexto placeholder="Especialidad" valor={form.especialidad} alCambiar={actualizar('especialidad')} />
-              <CampoTexto placeholder="Contraseña" valor={form.password} alCambiar={actualizar('password')} />
 
               {!!errorGeneral && <AlertaError mensaje={errorGeneral} />}
               <BotonPrimario titulo="Guardar Cambios" onPress={manejarGuardar} cargando={cargando} estilo={estilos.botonGuardar} />

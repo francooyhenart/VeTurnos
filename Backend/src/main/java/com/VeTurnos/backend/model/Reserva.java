@@ -69,6 +69,12 @@ public class Reserva {
         this.estado = EstadoReserva.CANCELADO;
     }
 
+    public void resetearAPendiente() {
+        if (this.estado == EstadoReserva.COMPLETADO) throw new IllegalStateException("No se puede desconfirmar un turno ya completado");
+        if (this.estado == EstadoReserva.CANCELADO) throw new IllegalStateException("No se puede modificar un turno cancelado");
+        this.estado = EstadoReserva.PENDIENTE;
+    }
+
     public Long getId() { return id; }
     public Mascota getMascota() { return mascota; }
     public Cliente getCliente() { return cliente; }
@@ -76,4 +82,5 @@ public class Reserva {
     public LocalDateTime getFechaHora() { return fechaHora; }
     public EstadoReserva getEstado() { return estado; }
     public Integer getDuracionMinutos() { return duracionMinutos; }
+    public void setVeterinario(Veterinario veterinario) { this.veterinario = veterinario; }
 }

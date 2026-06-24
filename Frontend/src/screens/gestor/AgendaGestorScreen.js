@@ -1,4 +1,4 @@
-// AgendaGestorScreen.js - Agenda completa de todos los veterinarios
+// AgendaGestorScreen.js - Lista de veterinarios para ver su agenda
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -7,118 +7,51 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
-  SectionList,
 } from 'react-native';
-import {
-  CargandoPantalla,
-  EstadoVacio,
-  AlertaError,
-} from '../../components/ui';
+import { CargandoPantalla, EstadoVacio, AlertaError } from '../../components/ui';
 import { FONT_SIZE, SPACING } from '../../constants';
-import { obtenerAgendaCompleta } from '../../services/api';
+import { obtenerVeterinarios } from '../../services/api';
 
-const formatearFechaHoraRango = (fechaHoraStr, duracionMinutos = 30) => {
-  if (!fechaHoraStr) return '';
-  
-  const inicio = new Date(fechaHoraStr);
-  const fin = new Date(inicio.getTime() + (duracionMinutos || 30) * 60000);
-
-  const dia = inicio.getDate();
-  const mes = inicio.toLocaleString('es-AR', { month: 'short' });
-  
-  const horaInicio = inicio.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-  const horaFin = fin.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-
-  return `${dia} ${mes} de ${horaInicio} a ${horaFin}`;
-};
-
-const badgeColor = (estado) => {
-  switch (estado) {
-    case 'PENDIENTE': return '#0284C7';
-    case 'ASISTIDO': return '#16A34A';
-    case 'COMPLETADO': return '#90C7A1';
-    case 'CANCELADO': return '#999';
-    default: return '#999';
-  }
-};
-
-const badgeLabel = (estado) => {
-  switch (estado) {
-    case 'PENDIENTE': return 'Pendiente';
-    case 'ASISTIDO': return 'Asistido';
-    case 'COMPLETADO': return 'Completado';
-    case 'CANCELADO': return 'Cancelado';
-    default: return estado;
-  }
-};
-
-const ItemReserva = ({ reserva }) => (
-  <View style={estilos.itemReserva}>
-    <View style={estilos.infoReserva}>
-      <Text style={estilos.mascotaNombre}>{reserva.nombreMascota}</Text>
-      <Text style={estilos.clienteNombre}>👤 {reserva.clienteNombre}</Text>
-      <Text style={estilos.fechaTexto}>
-        {formatearFechaHoraRango(reserva.fechaHora, reserva.duracionMinutos)}
-      </Text>
+const TarjetaVeterinario = ({ vet, onPress }) => (
+  <TouchableOpacity style={estilos.tarjeta} onPress={onPress} activeOpacity={0.8}>
+    <View style={estilos.tarjetaInfo}>
+      <Text style={estilos.nombre}>{vet.nombreCompleto}</Text>
+      <Text style={estilos.matricula}>{vet.matricula}</Text>
+      {vet.especialidad ? (
+        <Text style={estilos.especialidad}>{vet.especialidad}</Text>
+      ) : null}
     </View>
-    <View style={[estilos.estadoBadge, { backgroundColor: badgeColor(reserva.estado) }]}>
-      <Text style={estilos.estadoTexto}>{badgeLabel(reserva.estado)}</Text>
-    </View>
-  </View>
-);
-
-const VeterinarioSection = ({ veterinario, reservas }) => (
-  <View style={estilos.sectionVeterinario}>
-    <View style={estilos.headerVeterinario}>
-      <View>
-        <Text style={estilos.nombreVeterinario}>{veterinario.nombre}</Text>
-        <Text style={estilos.matriculaVet}>{veterinario.matricula}</Text>
-      </View>
-      <Text style={estilos.totalReservas}>{reservas.length} turnos</Text>
-    </View>
-    
-    {reservas.length > 0 ? (
-      <View style={estilos.reservasLista}>
-        {reservas.map((reserva) => (
-          <ItemReserva key={reserva.id} reserva={reserva} />
-        ))}
-      </View>
-    ) : (
-      <View style={estilos.sinReservas}>
-        <Text style={estilos.sinReservasTexto}>Sin turnos programados</Text>
-      </View>
-    )}
-  </View>
+    <Text style={estilos.flecha}>›</Text>
+  </TouchableOpacity>
 );
 
 const AgendaGestorScreen = ({ navigation }) => {
-  const [agendaData, setAgendaData] = useState(null);
+  const [veterinarios, setVeterinarios] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
 
-  const cargarAgenda = useCallback(async () => {
+  const cargar = useCallback(async () => {
     setCargando(true);
     setError('');
     try {
-      const data = await obtenerAgendaCompleta();
-      setAgendaData(data);
+      const data = await obtenerVeterinarios();
+      setVeterinarios(data);
     } catch (e) {
-      setError(e.message || 'Error al cargar la agenda');
+      setError(e.message || 'Error al cargar los veterinarios');
     } finally {
       setCargando(false);
     }
   }, []);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', cargarAgenda);
+    const unsubscribe = navigation.addListener('focus', cargar);
     return unsubscribe;
-  }, [navigation, cargarAgenda]);
+  }, [navigation, cargar]);
 
   if (cargando) return <CargandoPantalla />;
 
   return (
     <SafeAreaView style={estilos.safeArea}>
-      {/* Encabezado */}
       <View style={estilos.encabezado}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -126,53 +59,35 @@ const AgendaGestorScreen = ({ navigation }) => {
         >
           <Text style={estilos.flechaTexto}>←</Text>
         </TouchableOpacity>
-        <Text style={estilos.titulo}>Agenda Completa</Text>
+        <Text style={estilos.titulo}>Agenda por Veterinario</Text>
         <TouchableOpacity
-          onPress={cargarAgenda}
+          onPress={cargar}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={estilos.botonRefresh}>🔄</Text>
+          <Text style={estilos.refresh}>🔄</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Info General */}
-      {agendaData && (
-        <View style={estilos.infoGeneral}>
-          <View style={estilos.infoItem}>
-            <Text style={estilos.infoLabel}>Veterinarios</Text>
-            <Text style={estilos.infoValor}>{agendaData.totalVeterinarios}</Text>
-          </View>
-          <View style={estilos.infoItem}>
-            <Text style={estilos.infoLabel}>Turnos</Text>
-            <Text style={estilos.infoValor}>{agendaData.totalReservas}</Text>
-          </View>
-        </View>
-      )}
+      <Text style={estilos.subtitulo}>
+        Seleccioná un veterinario para ver su agenda
+      </Text>
 
       {!!error && <AlertaError mensaje={error} estilo={{ margin: SPACING.md }} />}
 
-      {/* Lista de Veterinarios y sus Reservas */}
-      {agendaData?.veterinarios && agendaData.veterinarios.length > 0 ? (
-        <FlatList
-          data={agendaData.veterinarios}
-          keyExtractor={(item) => String(item.id)}
-          renderItem={({ item }) => {
-            const reservasDelVet = agendaData.reservas.filter(r => true); // En futuro filtrar por vet
-            return (
-              <VeterinarioSection
-                veterinario={item}
-                reservas={reservasDelVet}
-              />
-            );
-          }}
-          contentContainerStyle={estilos.lista}
-          ListEmptyComponent={<EstadoVacio mensaje="No hay veterinarios registrados." />}
-        />
-      ) : (
-        <View style={estilos.contenedorVacio}>
-          <EstadoVacio mensaje="No hay veterinarios en el sistema." />
-        </View>
-      )}
+      <FlatList
+        data={veterinarios}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => (
+          <TarjetaVeterinario
+            vet={item}
+            onPress={() => navigation.navigate('AgendaVeterinario', { veterinario: item })}
+          />
+        )}
+        contentContainerStyle={estilos.lista}
+        ListEmptyComponent={
+          <EstadoVacio mensaje="No hay veterinarios registrados en el sistema." />
+        }
+      />
     </SafeAreaView>
   );
 };
@@ -186,7 +101,6 @@ const estilos = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#143343',
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     paddingTop: SPACING.lg,
@@ -201,129 +115,52 @@ const estilos = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
   },
-  botonRefresh: {
+  refresh: {
     fontSize: FONT_SIZE.lg,
   },
-  infoGeneral: {
-    flexDirection: 'row',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    gap: SPACING.md,
-  },
-  infoItem: {
-    flex: 1,
-    backgroundColor: '#A3E1FC',
-    borderRadius: 8,
-    paddingVertical: SPACING.md,
-    alignItems: 'center',
-  },
-  infoLabel: {
+  subtitulo: {
     fontSize: FONT_SIZE.sm,
-    color: '#143343',
-    fontWeight: '600',
-  },
-  infoValor: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: '700',
-    color: '#143343',
-    marginTop: 4,
+    color: '#A3E1FC',
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
   },
   lista: {
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.xl,
   },
-  contenedorVacio: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sectionVeterinario: {
+  tarjeta: {
     backgroundColor: '#E3E3E3',
     borderRadius: 12,
     padding: SPACING.md,
-    marginVertical: SPACING.md,
-    overflow: 'hidden',
-  },
-  headerVeterinario: {
+    marginVertical: SPACING.sm,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.md,
-    paddingBottom: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: '#D0D0D0',
-  },
-  nombreVeterinario: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '700',
-    color: '#143343',
-  },
-  matriculaVet: {
-    fontSize: FONT_SIZE.sm,
-    color: '#666',
-    marginTop: 2,
-  },
-  totalReservas: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '700',
-    color: '#A3E1FC',
-    backgroundColor: '#143343',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  reservasLista: {
-    gap: SPACING.sm,
-  },
-  itemReserva: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: SPACING.md,
-    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    borderLeftWidth: 4,
-    borderLeftColor: '#A3E1FC',
   },
-  infoReserva: {
+  tarjetaInfo: {
     flex: 1,
-    paddingRight: SPACING.md,
   },
-  mascotaNombre: {
+  nombre: {
     fontSize: FONT_SIZE.md,
     fontWeight: '700',
     color: '#143343',
   },
-  clienteNombre: {
+  matricula: {
     fontSize: FONT_SIZE.sm,
-    color: '#666',
+    color: '#555',
     marginTop: 2,
   },
-  fechaTexto: {
+  especialidad: {
     fontSize: FONT_SIZE.sm,
-    color: '#1F1F1F',
-    marginTop: 4,
-  },
-  estadoBadge: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    borderRadius: 6,
-  },
-  estadoTexto: {
-    fontSize: FONT_SIZE.sm - 1,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  sinReservas: {
-    alignItems: 'center',
-    paddingVertical: SPACING.lg,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-  },
-  sinReservasTexto: {
-    fontSize: FONT_SIZE.sm,
-    color: '#999',
+    color: '#666',
     fontStyle: 'italic',
+    marginTop: 2,
+  },
+  flecha: {
+    fontSize: 24,
+    color: '#143343',
+    fontWeight: '700',
+    paddingLeft: SPACING.md,
   },
 });
 
