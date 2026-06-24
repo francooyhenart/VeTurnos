@@ -80,9 +80,10 @@ public class ReservaController {
     @PatchMapping("/{id}/asistencia")
     public ResponseEntity<?> cambiarAsistencia(
             @PathVariable Long id,
-            @RequestParam String estado) {
+            @RequestParam String estado,
+            @RequestParam(required = false) Long veterinarioId) {
         try {
-            ReservaResponse response = reservaService.registrarAsistencia(id, estado);
+            ReservaResponse response = reservaService.registrarAsistencia(id, estado, veterinarioId);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (IllegalArgumentException | IllegalStateException e) {
             Map<String, String> errorResponse = new HashMap<>();

@@ -9,6 +9,7 @@ import com.VeTurnos.backend.model.Reserva;
 import com.VeTurnos.backend.repository.ClienteRepository;
 import com.VeTurnos.backend.repository.MascotaRepository;
 import com.VeTurnos.backend.repository.ReservaRepository;
+import com.VeTurnos.backend.repository.VeterinarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,11 +25,14 @@ public class ReservaService {
     private final ReservaRepository reservaRepository;
     private final ClienteRepository clienteRepository;
     private final MascotaRepository mascotaRepository;
+    private final VeterinarioRepository veterinarioRepository;
 
-    public ReservaService(ReservaRepository reservaRepository, ClienteRepository clienteRepository, MascotaRepository mascotaRepository) {
+    public ReservaService(ReservaRepository reservaRepository, ClienteRepository clienteRepository,
+                          MascotaRepository mascotaRepository, VeterinarioRepository veterinarioRepository) {
         this.reservaRepository = reservaRepository;
         this.clienteRepository = clienteRepository;
         this.mascotaRepository = mascotaRepository;
+        this.veterinarioRepository = veterinarioRepository;
     }
 
     @Transactional
@@ -56,6 +60,12 @@ public class ReservaService {
 
         // 4. Guardar un ÚNICO registro con su duración real
         Reserva nuevaReserva = new Reserva(mascota, cliente, request.getFechaHora(), duracion);
+
+        if (request.getVeterinarioId() != null) {
+            veterinarioRepository.findById(request.getVeterinarioId())
+                    .ifPresent(nuevaReserva::setVeterinario);
+        }
+
         Reserva reservaGuardada = reservaRepository.save(nuevaReserva);
 
         return mapperAResponse(reservaGuardada);
@@ -91,7 +101,7 @@ public class ReservaService {
     }
 
     @Transactional
-    public ReservaResponse registrarAsistencia(Long id, String nuevoEstado) {
+    public ReservaResponse registrarAsistencia(Long id, String nuevoEstado, Long veterinarioId) {
         Reserva reserva = reservaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("La reserva no existe"));
 
@@ -102,11 +112,16 @@ public class ReservaService {
             throw new IllegalArgumentException("Estado de asistencia inválido");
         }
 
-        // Conmutación segura usando las reglas de negocio de tu entidad de dominio
         if (estadoEnum == EstadoReserva.ASISTIDO) {
             reserva.marcarComoAsistido();
+            // Si se provee veterinarioId y la reserva no tiene vet asignado, asignarlo
+            if (veterinarioId != null && reserva.getVeterinario() == null) {
+                veterinarioRepository.findById(veterinarioId).ifPresent(reserva::setVeterinario);
+            }
         } else if (estadoEnum == EstadoReserva.COMPLETADO) {
             reserva.completar();
+        } else if (estadoEnum == EstadoReserva.PENDIENTE) {
+            reserva.resetearAPendiente();
         } else {
             throw new IllegalArgumentException("Operación no permitida para este flujo de asistencia");
         }
