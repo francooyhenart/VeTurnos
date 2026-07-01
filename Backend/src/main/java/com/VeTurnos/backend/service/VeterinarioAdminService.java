@@ -93,7 +93,8 @@ public class VeterinarioAdminService {
             veterinario.getNombreCompleto(),
             veterinario.getEmail(),
             veterinario.getMatricula(),
-            veterinario.getEspecialidad()
+            veterinario.getEspecialidad(),
+            veterinario.getTelefono()
         );
     }
 }
