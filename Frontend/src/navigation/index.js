@@ -31,9 +31,9 @@ import InicioGestorScreen from '../screens/gestor/InicioGestorScreen';
 import PerfilGestorScreen from '../screens/gestor/PerfilGestorScreen';
 import GestionVeterinariosScreen from '../screens/gestor/GestionVeterinariosScreen';
 import AltaVeterinarioScreen from '../screens/gestor/AltaVeterinarioScreen';
-import DetalleVeterinarioScreen from '../screens/gestor/DetalleVeterinarioScreen';
+import DetalleVeterinarioScreen from '../screens/veterinario/DetalleVeterinarioScreen';
 import AgendaGestorScreen from '../screens/gestor/AgendaGestorScreen';
-import AgendaVeterinarioScreen from '../screens/gestor/AgendaVeterinarioScreen';
+import AgendaVeterinarioScreen from '../screens/veterinario/AgendaVeterinarioScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
