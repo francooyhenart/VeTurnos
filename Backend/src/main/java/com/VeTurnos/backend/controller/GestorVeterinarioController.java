@@ -4,6 +4,8 @@ package com.VeTurnos.backend.controller;
 
 import com.VeTurnos.backend.dto.VeterinarioRequest;
 import com.VeTurnos.backend.dto.VeterinarioResponse;
+import com.VeTurnos.backend.dto.VeterinarioUpdateRequest;
+import com.VeTurnos.backend.dto.SedeResponse;
 import com.VeTurnos.backend.model.Veterinario;
 import com.VeTurnos.backend.model.Reserva;
 import com.VeTurnos.backend.service.GestorService;
@@ -45,7 +47,8 @@ public class GestorVeterinarioController {
                 request.getEmail(),
                 request.getPassword(),
                 request.getMatricula(),
-                request.getEspecialidad()
+                request.getEspecialidad(),
+                request.getSedeId()
             );
             VeterinarioResponse response = convertirAResponse(veterinario);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -124,26 +127,30 @@ public class GestorVeterinarioController {
     }
 
     /**
-     * UPDATE - Actualizar datos del veterinario
+     * UPDATE - Actualizar datos del veterinario (soporta actualización parcial:
+     * los campos ausentes o nulos en el payload no se modifican)
      * PUT /api/admin/veterinarios/{id}
      */
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizarVeterinario(
             @PathVariable Long id,
-            @Valid @RequestBody VeterinarioRequest request) {
+            @Valid @RequestBody VeterinarioUpdateRequest request) {
         try {
             Veterinario veterinario = gestorService.actualizarVeterinario(
                 id,
                 request.getNombreCompleto(),
                 request.getTelefono(),
-                request.getEspecialidad()
+                request.getEspecialidad(),
+                request.getEmail(),
+                request.getMatricula(),
+                request.getSedeId()
             );
             VeterinarioResponse response = convertirAResponse(veterinario);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", e.getMessage());
-            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "Ocurrió un error al actualizar el veterinario");
@@ -176,7 +183,9 @@ public class GestorVeterinarioController {
     }
 
     /**
-     * DELETE - Eliminar veterinario
+     * DELETE - Desactivar veterinario (borrado lógico).
+     * No se elimina el registro físicamente porque puede tener reservas asociadas;
+     * se marca como inactivo y deja de listarse.
      * DELETE /api/admin/veterinarios/{id}
      */
     @DeleteMapping("/{id}")
@@ -184,12 +193,17 @@ public class GestorVeterinarioController {
         try {
             gestorService.eliminarVeterinario(id);
             Map<String, String> response = new HashMap<>();
-            response.put("mensaje", "Veterinario eliminado exitosamente");
+            response.put("mensaje", "Veterinario desactivado exitosamente");
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", e.getMessage());
             return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Salvaguarda ante restricciones de FK no previstas por el borrado lógico
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "No se puede eliminar el veterinario porque tiene turnos asociados");
+            return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
         } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "Ocurrió un error al eliminar el veterinario");
@@ -263,13 +277,24 @@ public class GestorVeterinarioController {
      * Helper - Convertir Veterinario a VeterinarioResponse
      */
     private VeterinarioResponse convertirAResponse(Veterinario veterinario) {
+        SedeResponse sedeResponse = veterinario.getSede() != null
+            ? new SedeResponse(
+                veterinario.getSede().getId(),
+                veterinario.getSede().getNombre(),
+                veterinario.getSede().getCalle(),
+                veterinario.getSede().getNumero(),
+                veterinario.getSede().getEntreCalles(),
+                veterinario.getSede().getDireccionCompleta())
+            : null;
+
         return new VeterinarioResponse(
             veterinario.getId(),
             veterinario.getNombreCompleto(),
             veterinario.getEmail(),
             veterinario.getMatricula(),
             veterinario.getEspecialidad(),
-            veterinario.getTelefono()
+            veterinario.getTelefono(),
+            sedeResponse
         );
     }
 }

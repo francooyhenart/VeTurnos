@@ -48,7 +48,7 @@ const AgendaGestorScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation, cargar]);
 
-  if (cargando) return <CargandoPantalla />;
+  if (cargando) return <CargandoPantalla oscuro />;
 
   return (
     <SafeAreaView style={estilos.safeArea}>

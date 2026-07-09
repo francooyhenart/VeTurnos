@@ -1,5 +1,5 @@
 // AltaVeterinarioScreen.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,13 @@ import {
 } from 'react-native';
 import {
   CampoTexto,
+  SelectorCampo,
   BotonPrimario,
   AlertaError,
   EncabezadoPersonalizado,
 } from '../../components/ui';
-import { FONT_SIZE, SPACING } from '../../constants';
-import { crearVeterinario } from '../../services/api';
+import { FONT_SIZE, SPACING, ESPECIALIDADES } from '../../constants';
+import { crearVeterinario, obtenerSedes } from '../../services/api';
 
 const AltaVeterinarioScreen = ({ navigation }) => {
   const [form, setForm] = useState({
@@ -27,10 +28,20 @@ const AltaVeterinarioScreen = ({ navigation }) => {
     password: '',
     matricula: '',
     especialidad: '',
+    sedeId: '',
   });
   const [errores, setErrores] = useState({});
   const [errorGeneral, setErrorGeneral] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [sedes, setSedes] = useState([]);
+  const [cargandoSedes, setCargandoSedes] = useState(true);
+
+  useEffect(() => {
+    obtenerSedes()
+      .then(setSedes)
+      .catch(() => setSedes([]))
+      .finally(() => setCargandoSedes(false));
+  }, []);
 
   const actualizar = (campo) => (valor) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
@@ -58,14 +69,19 @@ const manejarGuardar = async () => {
 
     setCargando(true);
     try {
-      // Pasamos el objeto 'form' completo
-      const respuesta = await crearVeterinario(form);
-      
+      // sedeId viaja como número (o null si no se seleccionó ninguna sede)
+      const payload = {
+        ...form,
+        sedeId: form.sedeId ? parseInt(form.sedeId, 10) : null,
+      };
+      await crearVeterinario(payload);
+
       // Si todo sale bien, navegamos hacia atrás
-      navigation.navigate('GestionVeterinarios', { refresh: true }); 
+      navigation.navigate('GestionVeterinarios', { refresh: true });
     } catch (e) {
-      // Capturamos el error específico del backend
-      setErrorGeneral(e.response?.data?.message || 'Error al registrar el veterinario');
+      // e.message ya trae el mensaje del backend (ej. "El email ya está registrado",
+      // "La matrícula profesional ya existe") normalizado por el interceptor de api.js
+      setErrorGeneral(e.message || 'Error al registrar el veterinario');
     } finally {
       setCargando(false);
     }
@@ -130,11 +146,25 @@ const manejarGuardar = async () => {
               alCambiar={actualizar('matricula')}
               error={errores.matricula}
             />
-            <CampoTexto
+            <SelectorCampo
               placeholder="Especialidad (Opcional)"
               valor={form.especialidad}
               alCambiar={actualizar('especialidad')}
+              opciones={ESPECIALIDADES}
             />
+
+            {!cargandoSedes && sedes.length === 0 ? (
+              <Text style={estilos.avisoSinSedes}>
+                No hay sedes cargadas, crea una primero.
+              </Text>
+            ) : (
+              <SelectorCampo
+                placeholder="Sede (Opcional)"
+                valor={form.sedeId}
+                alCambiar={actualizar('sedeId')}
+                opciones={sedes.map((s) => ({ label: s.nombre, value: String(s.id) }))}
+              />
+            )}
 
             {!!errorGeneral && <AlertaError mensaje={errorGeneral} />}
 
@@ -173,6 +203,12 @@ const estilos = StyleSheet.create({
   },
   formulario: {
     gap: SPACING.sm,
+  },
+  avisoSinSedes: {
+    fontSize: FONT_SIZE.sm,
+    color: '#A3E1FC',
+    fontStyle: 'italic',
+    marginVertical: SPACING.xs,
   },
   botonGuardar: {
     backgroundColor: '#90C7A1',

@@ -84,6 +84,10 @@ const ItemTurno = ({ turno, onCancelar }) => (
   </View>
 );
 
+// Punto 3: "Próximos" = PENDIENTE; "Historial" = lo que ya pasó (asistido,
+// completado o cancelado)
+const ESTADOS_HISTORIAL = ['ASISTIDO', 'COMPLETADO', 'CANCELADO'];
+
 const TurnosScreen = ({ navigation }) => {
   const { usuario } = useAuth();
   const [turnos, setTurnos] = useState([]);
@@ -92,6 +96,7 @@ const TurnosScreen = ({ navigation }) => {
   const [advertencia, setAdvertencia] = useState('');
   const [turnoAcancelar, setTurnoACancelar] = useState(null);
   const [cancelando, setCancelando] = useState(false);
+  const [vista, setVista] = useState('proximos');
 
   const cargarTurnos = useCallback(async () => {
     if (!usuario?.nombreCompleto) return;
@@ -131,7 +136,13 @@ const TurnosScreen = ({ navigation }) => {
     }
   };
 
-  if (cargando) return <CargandoPantalla />;
+  const turnosFiltrados = turnos.filter((t) =>
+    vista === 'proximos'
+      ? t.estado === 'PENDIENTE'
+      : ESTADOS_HISTORIAL.includes(t.estado)
+  );
+
+  if (cargando) return <CargandoPantalla oscuro />;
 
   return (
     <SafeAreaView style={estilos.safeArea}>
@@ -150,6 +161,26 @@ const TurnosScreen = ({ navigation }) => {
         <Text style={estilos.titulo}>Mis turnos</Text>
       </View>
 
+      {/* Punto 3: segmented control Próximos / Historial */}
+      <View style={estilos.segmentado}>
+        <TouchableOpacity
+          style={[estilos.segmentoBoton, vista === 'proximos' && estilos.segmentoBotonActivo]}
+          onPress={() => setVista('proximos')}
+        >
+          <Text style={[estilos.segmentoTexto, vista === 'proximos' && estilos.segmentoTextoActivo]}>
+            Próximos
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[estilos.segmentoBoton, vista === 'historial' && estilos.segmentoBotonActivo]}
+          onPress={() => setVista('historial')}
+        >
+          <Text style={[estilos.segmentoTexto, vista === 'historial' && estilos.segmentoTextoActivo]}>
+            Historial
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {!!error && <AlertaError mensaje={error} estilo={{ margin: SPACING.md }} />}
       {!!advertencia && (
         <View style={estilos.alertaAdvertencia}>
@@ -161,13 +192,21 @@ const TurnosScreen = ({ navigation }) => {
       )}
 
       <FlatList
-        data={turnos}
+        data={turnosFiltrados}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
           <ItemTurno turno={item} onCancelar={setTurnoACancelar} />
         )}
         contentContainerStyle={estilos.lista}
-        ListEmptyComponent={<EstadoVacio mensaje="No tenés turnos programados." />}
+        ListEmptyComponent={
+          <EstadoVacio
+            mensaje={
+              vista === 'proximos'
+                ? 'No tenés turnos próximos programados.'
+                : 'Todavía no tenés turnos en tu historial.'
+            }
+          />
+        }
       />
 
       <ModalConfirmacion
@@ -212,6 +251,33 @@ const estilos = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
     textAlign: 'center',
+  },
+  segmentado: {
+    flexDirection: 'row',
+    backgroundColor: '#0F2733',
+    borderRadius: 10,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+    padding: 4,
+  },
+  segmentoBoton: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+  segmentoBotonActivo: {
+    backgroundColor: '#90C7A1',
+  },
+  segmentoTexto: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: '600',
+    color: '#A3E1FC',
+  },
+  segmentoTextoActivo: {
+    color: '#143343',
+    fontWeight: '700',
   },
   lista: {
     paddingHorizontal: SPACING.lg,

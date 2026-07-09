@@ -38,6 +38,22 @@ public class MascotaController {
         }
     }
 
+    /**
+     * Búsqueda Global de Pacientes (Veterinario): por nombre de mascota o DNI del dueño.
+     * GET /api/mascotas/buscar?query=...
+     */
+    @GetMapping("/buscar")
+    public ResponseEntity<?> buscarMascotas(@RequestParam String query) {
+        try {
+            List<MascotaResponse> response = mascotaService.buscarMascotas(query);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Ocurrió un error inesperado al buscar mascotas");
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/cliente/{clienteId}")
     public ResponseEntity<?> listarPorCliente(@PathVariable Long clienteId) {
         try {

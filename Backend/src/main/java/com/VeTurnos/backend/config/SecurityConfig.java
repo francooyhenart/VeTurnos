@@ -63,6 +63,12 @@ public class SecurityConfig {
                 // Rutas públicas
                 .requestMatchers("/api/auth/**").permitAll()
                 
+                // Listado de veterinarios: además del gestor, lo necesitan el Cliente (elegir
+                // vet al reservar) y el Veterinario (dropdown al cargar un turno). El resto de
+                // las rutas administrativas (alta, baja, edición, stats) siguen restringidas abajo.
+                .requestMatchers(HttpMethod.GET, "/api/admin/veterinarios")
+                    .hasAnyAuthority("GESTOR_VETERINARIOS", "ADMIN", "VETERINARIO", "CLIENTE")
+
                 // Rutas administrativas (corregido a hasAnyAuthority para evitar problemas con prefijo ROLE_)
                 .requestMatchers("/api/admin/veterinarios/**").hasAnyAuthority("GESTOR_VETERINARIOS", "ADMIN")
                 
@@ -82,7 +88,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/reservas/veterinario/**").hasAnyAuthority("GESTOR_VETERINARIOS", "VETERINARIO")
                 .requestMatchers(HttpMethod.GET, "/api/reservas/agenda").hasAnyAuthority("GESTOR_VETERINARIOS", "VETERINARIO", "CLIENTE")
                 .requestMatchers(HttpMethod.PATCH, "/api/reservas/**").hasAnyAuthority("GESTOR_VETERINARIOS", "VETERINARIO")
-                .requestMatchers(HttpMethod.POST, "/api/reservas/**").hasAnyAuthority("CLIENTE", "GESTOR_VETERINARIOS")
+                .requestMatchers(HttpMethod.POST, "/api/reservas/**").hasAnyAuthority("CLIENTE", "GESTOR_VETERINARIOS", "VETERINARIO")
                 .requestMatchers(HttpMethod.DELETE, "/api/reservas/**").hasAnyAuthority("CLIENTE", "GESTOR_VETERINARIOS")
                 
                 .anyRequest().authenticated();

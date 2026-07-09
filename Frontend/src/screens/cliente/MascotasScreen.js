@@ -48,7 +48,7 @@ const MascotasScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation, cargarMascotas]);
 
-  if (cargando) return <CargandoPantalla />;
+  if (cargando) return <CargandoPantalla oscuro />;
 
   return (
     <SafeAreaView style={estilos.safeArea}>

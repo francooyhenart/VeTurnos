@@ -28,6 +28,9 @@ public class VeterinarioRequest {
 
     private String especialidad;
 
+    // Opcional: el Manager puede asignar una sede al crear el veterinario
+    private Long sedeId;
+
     // Getters
     public String getNombreCompleto() { return nombreCompleto; }
     public String getDni() { return dni; }
@@ -36,4 +39,5 @@ public class VeterinarioRequest {
     public String getPassword() { return password; }
     public String getMatricula() { return matricula; }
     public String getEspecialidad() { return especialidad; }
+    public Long getSedeId() { return sedeId; }
 }

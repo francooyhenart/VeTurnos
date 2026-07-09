@@ -1,3 +1,4 @@
+// InicioVeterinarioScreen.js - Dashboard del Veterinario (Punto 3)
 import React from 'react';
 import {
   View,
@@ -8,22 +9,23 @@ import {
   ScrollView,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { COLORS, FONT_SIZE, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants';
+import { FONT_SIZE, SPACING, SHADOWS } from '../../constants';
 
-const TarjetaAccion = ({ titulo, onPress }) => (
+const TarjetaAccion = ({ titulo, icono, onPress }) => (
   <TouchableOpacity
     style={estilos.tarjetaAccion}
     onPress={onPress}
     activeOpacity={0.8}
     accessibilityRole="button"
   >
+    <Text style={estilos.iconoTarjeta}>{icono}</Text>
     <Text style={estilos.tarjetaAccionTexto}>{titulo}</Text>
   </TouchableOpacity>
 );
 
-const InicioClienteScreen = ({ navigation }) => {
+const InicioVeterinarioScreen = ({ navigation }) => {
   const { usuario } = useAuth();
-  const nombre = usuario?.nombreCompleto?.split(' ')[0] || 'usuario';
+  const nombre = usuario?.nombreCompleto?.split(' ')[0] || 'Doctor/a';
 
   return (
     <SafeAreaView style={estilos.safeArea}>
@@ -44,46 +46,38 @@ const InicioClienteScreen = ({ navigation }) => {
 
       {/* Contenido */}
       <ScrollView contentContainerStyle={estilos.scroll}>
+        <Text style={estilos.subtitulo}>Panel del Veterinario</Text>
+
         <TarjetaAccion
-          titulo="Mis mascotas"
-          onPress={() => navigation.navigate('Mascotas')}
+          titulo="Mi Agenda Diaria"
+          icono="📋"
+          onPress={() => navigation.navigate('AgendaAdmin')}
         />
         <TarjetaAccion
-          titulo="Mis turnos"
-          onPress={() => navigation.navigate('Turnos')}
+          titulo="Buscador de Historiales"
+          icono="🔍"
+          onPress={() => navigation.navigate('BuscadorPacientes')}
         />
         <TarjetaAccion
-          titulo="Reservar turno"
-          onPress={() =>
-            navigation.navigate('Turnos', {
-              screen: 'ReservarTurno',
-              // Sin esto, React Navigation reemplaza el stack de "Turnos" para
-              // que ReservarTurno sea la ÚNICA pantalla (sin MisTurnos debajo).
-              // Con initial:false, MisTurnos queda como raíz y ReservarTurno
-              // se apila arriba, así goBack() y la solapa inferior "Turnos"
-              // vuelven a mostrar la lista en vez de quedar pegados acá.
-              initial: false,
-            })
-          }
+          titulo="Programar Nuevo Turno"
+          icono="🗓️"
+          onPress={() => navigation.navigate('CargarTurnoVeterinario')}
         />
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-// ════════════════════════════════════════════
-//  ESTILOS TUNEADOS CON LA PALETA FIGMA B1
-// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#143343', // 🎨 Fondo Azul Petróleo Oscuro general
+    backgroundColor: '#143343',
   },
   encabezado: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#143343', // 🎨 Unificado con el fondo de la app
+    backgroundColor: '#143343',
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     paddingTop: SPACING.xl,
@@ -91,7 +85,7 @@ const estilos = StyleSheet.create({
   saludo: {
     fontSize: FONT_SIZE.xl,
     fontWeight: '700',
-    color: '#FFFFFF', // 🎨 "Hola, Brenda" en color blanco
+    color: '#FFFFFF',
   },
   avatarBoton: {
     minWidth: 48,
@@ -103,34 +97,46 @@ const estilos = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#E3E3E3', // 🎨 Gris clarito para el fondo del avatar
+    backgroundColor: '#E3E3E3',
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInicial: {
     fontSize: FONT_SIZE.lg,
     fontWeight: '700',
-    color: '#1F1F1F', // 🎨 Inicial en texto oscuro
+    color: '#143343',
   },
   scroll: {
     padding: SPACING.lg,
     gap: SPACING.md,
+    paddingBottom: SPACING.xl,
+  },
+  subtitulo: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: '600',
+    color: '#A3E1FC',
+    marginBottom: SPACING.md,
   },
   tarjetaAccion: {
-    backgroundColor: '#A3E1FC', // 🎨 Las 3 tarjetas principales en Celeste Pastel
-    borderRadius: 12, // Bordes redondeados más suaves
+    backgroundColor: '#90C7A1',
+    borderRadius: 12,
     paddingVertical: SPACING.xl,
     paddingHorizontal: SPACING.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 110, // Un toque más de aire vertical
+    minHeight: 110,
     ...SHADOWS.sm,
   },
+  iconoTarjeta: {
+    fontSize: 32,
+    marginBottom: SPACING.sm,
+  },
   tarjetaAccionTexto: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: '700', // 🎨 Texto con más peso para que sea legible
-    color: '#143343', // 🎨 Color azul oscuro para las letras sobre el celeste
+    fontSize: FONT_SIZE.md,
+    fontWeight: '700',
+    color: '#143343',
+    textAlign: 'center',
   },
 });
 
-export default InicioClienteScreen;
+export default InicioVeterinarioScreen;

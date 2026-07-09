@@ -67,6 +67,18 @@ public class MascotaService {
                 .collect(Collectors.toList());
     }
 
+    // Búsqueda global de pacientes (Veterinario): por nombre de mascota o DNI del dueño
+    @Transactional(readOnly = true)
+    public List<MascotaResponse> buscarMascotas(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return List.of();
+        }
+        List<Mascota> mascotas = mascotaRepository.buscarPorNombreOMascotaDniDueno(query.trim());
+        return mascotas.stream()
+                .map(this::mapperAResponse)
+                .collect(Collectors.toList());
+    }
+
     // Método helper para no repetir el mapeo
     private MascotaResponse mapperAResponse(Mascota mascota) {
         return new MascotaResponse(
@@ -75,7 +87,9 @@ public class MascotaService {
                 mascota.getEspecie().name(),
                 mascota.getRaza(),
                 mascota.getEdad(),
-                mascota.getDueño().getId()
+                mascota.getDueño().getId(),
+                mascota.getDueño().getNombreCompleto(),
+                mascota.getDueño().getDni()
         );
     }
 }

@@ -6,29 +6,28 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { obtenerAgenda, registrarAsistencia } from '../../services/api';
+import {
+  obtenerAgenda,
+  registrarAsistencia,
+  actualizarObservaciones,
+  obtenerSedes,
+} from '../../services/api';
 import { ROLES } from '../../constants';
 import {
   CargandoPantalla,
   EstadoVacio,
   AlertaError,
+  BotonPrimario,
+  BotonSecundario,
+  CampoTexto,
+  SelectorCampo,
+  SelectorFecha,
+  ModalFormulario,
 } from '../../components/ui';
 import { COLORS, FONT_SIZE, SPACING, BORDER_RADIUS } from '../../constants';
-
-const addDias = (fecha, dias) => {
-  const nueva = new Date(fecha);
-  nueva.setDate(nueva.getDate() + dias);
-  return nueva;
-};
-
-const formatearFecha = (fecha) =>
-  fecha.toLocaleDateString('es-AR', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  });
 
 // Calculates the time range using the duration provided by the backend
 const formatearHoraRango = (fechaHoraStr, duracionMinutos = 30) => {
@@ -47,33 +46,50 @@ const badgeConfig = {
 };
 
 // Para el VET: botón interactivo que alterna PENDIENTE ↔ ASISTIDO
-const ItemAgendaVet = ({ reserva, onMarcar }) => {
+const ItemAgendaVet = ({ reserva, onMarcar, actualizando, onAbrirFicha }) => {
   const asistido = reserva.estado === 'ASISTIDO';
   const completado = reserva.estado === 'COMPLETADO';
+  const cancelado = reserva.estado === 'CANCELADO';
 
   return (
     <View style={estilos.itemTurno}>
-      <View style={estilos.infoContenedor}>
-        <Text style={estilos.itemHora}>
-          {formatearHoraRango(reserva.fechaHora, reserva.duracionMinutos)}
-        </Text>
-        <Text style={estilos.itemNombre}>Cliente: {reserva.nombreCliente}</Text>
-        <Text style={estilos.itemMascota}>Paciente: {reserva.nombreMascota}</Text>
+      <View style={estilos.filaPrincipal}>
+        <View style={estilos.infoContenedor}>
+          <Text style={estilos.itemHora}>
+            {formatearHoraRango(reserva.fechaHora, reserva.duracionMinutos)}
+          </Text>
+          <Text style={estilos.itemNombre}>Cliente: {reserva.nombreCliente}</Text>
+          <Text style={estilos.itemMascota}>Paciente: {reserva.nombreMascota}</Text>
+        </View>
+
+        {completado ? (
+          <View style={[estilos.checkBoton, estilos.checkBotonCompletado]}>
+            <Text style={estilos.checkTextoActivo}>✓✓</Text>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={[estilos.checkBoton, asistido && estilos.checkBotonActivo]}
+            onPress={() => onMarcar(reserva)}
+            disabled={actualizando}
+            accessibilityLabel={asistido ? 'Desconfirmar asistencia' : 'Confirmar asistencia'}
+            accessibilityRole="button"
+          >
+            {actualizando ? (
+              <ActivityIndicator size="small" color="#143343" />
+            ) : (
+              <Text style={[estilos.checkTexto, asistido && estilos.checkTextoActivo]}>✓</Text>
+            )}
+          </TouchableOpacity>
+        )}
       </View>
 
-      {completado ? (
-        <View style={[estilos.checkBoton, estilos.checkBotonCompletado]}>
-          <Text style={estilos.checkTextoActivo}>✓✓</Text>
-        </View>
-      ) : (
-        <TouchableOpacity
-          style={[estilos.checkBoton, asistido && estilos.checkBotonActivo]}
-          onPress={() => onMarcar(reserva)}
-          accessibilityLabel={asistido ? 'Desconfirmar asistencia' : 'Confirmar asistencia'}
-          accessibilityRole="button"
-        >
-          <Text style={[estilos.checkTexto, asistido && estilos.checkTextoActivo]}>✓</Text>
-        </TouchableOpacity>
+      {/* RF-14: oculto para turnos cancelados */}
+      {!cancelado && (
+        <BotonSecundario
+          titulo={reserva.observacionesClinicas ? 'Ver / Editar Ficha Médica' : 'Ficha Médica'}
+          onPress={() => onAbrirFicha(reserva)}
+          estilo={estilos.botonFicha}
+        />
       )}
     </View>
   );
@@ -105,13 +121,31 @@ const AgendaAdminScreen = ({ navigation }) => {
   const [agenda, setAgenda] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
+  const [actualizandoIds, setActualizandoIds] = useState({});
+
+  // Filtro por sede (solo tiene sentido para el gestor, que ve múltiples sedes)
+  const [sedes, setSedes] = useState([]);
+  const [sedeId, setSedeId] = useState('');
+
+  useEffect(() => {
+    if (esVeterinario) return;
+    obtenerSedes()
+      .then(setSedes)
+      .catch(() => setSedes([]));
+  }, [esVeterinario]);
+
+  // RF-14: Ficha Médica (observacionesClinicas del turno)
+  const [fichaReserva, setFichaReserva] = useState(null);
+  const [textoFicha, setTextoFicha] = useState('');
+  const [guardandoFicha, setGuardandoFicha] = useState(false);
+  const [errorFicha, setErrorFicha] = useState('');
 
   const cargarAgenda = useCallback(async () => {
     setCargando(true);
     setError('');
     try {
       const fechaStr = fecha.toISOString().split('T')[0];
-      const data = await obtenerAgenda(fechaStr);
+      const data = await obtenerAgenda(fechaStr, sedeId ? parseInt(sedeId, 10) : null);
       const filtrados = data.filter((r) => r.estado !== 'CANCELADO');
       filtrados.sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora));
       setAgenda(filtrados);
@@ -120,7 +154,7 @@ const AgendaAdminScreen = ({ navigation }) => {
     } finally {
       setCargando(false);
     }
-  }, [fecha]);
+  }, [fecha, sedeId]);
 
   useEffect(() => {
     cargarAgenda();
@@ -132,15 +166,58 @@ const AgendaAdminScreen = ({ navigation }) => {
   }, [navigation, cargarAgenda]);
 
   const manejarMarcar = async (reserva) => {
+    if (actualizandoIds[reserva.id]) return; // evita doble tap mientras hay una petición en curso
+
     // Alterna entre PENDIENTE y ASISTIDO; COMPLETADO es un estado final
     const nuevoEstado = reserva.estado === 'ASISTIDO' ? 'PENDIENTE' : 'ASISTIDO';
+    const estadoAnterior = reserva.estado;
+
+    // Optimistic update: refleja el cambio al toque, sin esperar la respuesta del backend
+    setAgenda((prev) => prev.map((r) => (r.id === reserva.id ? { ...r, estado: nuevoEstado } : r)));
+    setActualizandoIds((prev) => ({ ...prev, [reserva.id]: true }));
+
     try {
       // Si es veterinario, se auto-asigna al turno cuando lo confirma
       const vetId = esVeterinario ? usuario.id : null;
       await registrarAsistencia(reserva.id, nuevoEstado, vetId);
-      await cargarAgenda();
     } catch (e) {
+      // Revertimos el cambio optimista si el backend lo rechazó
+      setAgenda((prev) => prev.map((r) => (r.id === reserva.id ? { ...r, estado: estadoAnterior } : r)));
       setError(e.message || 'Error al actualizar el estado.');
+    } finally {
+      setActualizandoIds((prev) => {
+        const { [reserva.id]: _omitido, ...resto } = prev;
+        return resto;
+      });
+    }
+  };
+
+  const abrirFicha = (reserva) => {
+    setFichaReserva(reserva);
+    setTextoFicha(reserva.observacionesClinicas || '');
+    setErrorFicha('');
+  };
+
+  const cerrarFicha = () => {
+    setFichaReserva(null);
+    setErrorFicha('');
+  };
+
+  const guardarFicha = async () => {
+    if (!fichaReserva) return;
+    setErrorFicha('');
+    setGuardandoFicha(true);
+    try {
+      await actualizarObservaciones(fichaReserva.id, textoFicha);
+      // Reflejamos el cambio en la lista para que el botón pase a "Ver / Editar Ficha Médica"
+      setAgenda((prev) =>
+        prev.map((r) => (r.id === fichaReserva.id ? { ...r, observacionesClinicas: textoFicha } : r))
+      );
+      setFichaReserva(null);
+    } catch (e) {
+      setErrorFicha(e.message || 'Error al guardar la ficha médica.');
+    } finally {
+      setGuardandoFicha(false);
     }
   };
 
@@ -163,6 +240,7 @@ const AgendaAdminScreen = ({ navigation }) => {
           <Text style={estilos.saludo}>Hola, {nombre}</Text>
         )}
         {puedeVolver && <Text style={estilos.tituloEncabezado}>Agenda del Día</Text>}
+        {/* Punto 3: la lupa ya no va acá, ahora vive en el Dashboard del veterinario */}
         <TouchableOpacity
           style={estilos.avatarBoton}
           onPress={() => navigation.navigate('PerfilModal')}
@@ -177,36 +255,40 @@ const AgendaAdminScreen = ({ navigation }) => {
       <View style={estilos.contenido}>
         <Text style={estilos.seccionTitulo}>Agenda</Text>
 
-        {/* Navegador de fecha gris claro redondeado */}
-        <View style={estilos.fechaNavegador}>
-          <TouchableOpacity
-            onPress={() => setFecha((f) => addDias(f, -1))}
-            style={estilos.fechaBoton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={estilos.fechaFlecha}>‹</Text>
-          </TouchableOpacity>
-          <Text style={estilos.fechaTexto}>{formatearFecha(fecha)}</Text>
-          <TouchableOpacity
-            onPress={() => setFecha((f) => addDias(f, 1))}
-            style={estilos.fechaBoton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={estilos.fechaFlecha}>›</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Filtro por Sede: solo para el gestor, que administra varias sedes */}
+        {!esVeterinario && (
+          <SelectorCampo
+            placeholder="Filtrar por Sede"
+            valor={sedeId}
+            alCambiar={setSedeId}
+            opciones={sedes.map((s) => ({ label: s.nombre, value: String(s.id) }))}
+            estilo={estilos.selectorSede}
+          />
+        )}
+
+        {/* Punto 5: selector de fecha con calendario propio */}
+        <SelectorFecha
+          valor={fecha}
+          alCambiar={setFecha}
+          estilo={estilos.selectorFechaAgenda}
+        />
 
         {!!error && <AlertaError mensaje={error} style={{ marginBottom: SPACING.md }} />}
 
         {cargando ? (
-          <CargandoPantalla />
+          <CargandoPantalla oscuro />
         ) : (
           <FlatList
             data={agenda}
             keyExtractor={(item) => String(item.id)}
             renderItem={({ item }) =>
               esVeterinario ? (
-                <ItemAgendaVet reserva={item} onMarcar={manejarMarcar} />
+                <ItemAgendaVet
+                  reserva={item}
+                  onMarcar={manejarMarcar}
+                  actualizando={!!actualizandoIds[item.id]}
+                  onAbrirFicha={abrirFicha}
+                />
               ) : (
                 <ItemAgendaGestor reserva={item} />
               )
@@ -219,14 +301,39 @@ const AgendaAdminScreen = ({ navigation }) => {
         )}
       </View>
 
-      {/* 🚀 BOTÓN FLOTANTE MÁS LLAMATIVO EN VERDE PASTEL */}
-      <TouchableOpacity
-        style={estilos.botonFlotante}
-        onPress={() => navigation.navigate('CrearTurnoAdmin')}
-        accessibilityLabel="Cargar turno nuevo"
+      {/* 🚀 BOTÓN FLOTANTE: Punto 10, para el veterinario esto se movió al
+          Dashboard ("Programar Nuevo Turno"); acá solo queda para el gestor */}
+      {!esVeterinario && (
+        <TouchableOpacity
+          style={estilos.botonFlotante}
+          onPress={() => navigation.navigate('CrearTurnoAdmin')}
+          accessibilityLabel="Cargar turno nuevo"
+        >
+          <Text style={estilos.botonFlotanteTexto}>+</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* RF-14: Modal de Ficha Médica */}
+      <ModalFormulario
+        visible={!!fichaReserva}
+        titulo="Ficha Médica"
+        onCerrar={cerrarFicha}
       >
-        <Text style={estilos.botonFlotanteTexto}>+</Text>
-      </TouchableOpacity>
+        <CampoTexto
+          placeholder="Diagnóstico / observaciones del turno..."
+          valor={textoFicha}
+          alCambiar={setTextoFicha}
+          multilinea
+          numeroLineas={6}
+        />
+        {!!errorFicha && <AlertaError mensaje={errorFicha} />}
+        <BotonPrimario
+          titulo="Guardar"
+          onPress={guardarFicha}
+          cargando={guardandoFicha}
+          estilo={estilos.botonGuardarFicha}
+        />
+      </ModalFormulario>
     </SafeAreaView>
   );
 };
@@ -293,32 +400,11 @@ const estilos = StyleSheet.create({
     textAlign: 'center',
     marginBottom: SPACING.lg,
   },
-  fechaNavegador: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#E3E3E3', // 🎨 Gris claro redondeado uniforme
-    borderRadius: 8,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
+  selectorSede: {
     marginBottom: SPACING.md,
-    minHeight: 52,
   },
-  fechaBoton: {
-    minWidth: 48,
-    minHeight: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fechaFlecha: {
-    fontSize: 28,
-    color: '#1F1F1F',
-    fontWeight: '400',
-  },
-  fechaTexto: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '700',
-    color: '#1F1F1F',
+  selectorFechaAgenda: {
+    marginBottom: SPACING.md,
   },
   lista: {
     paddingBottom: SPACING.xl,
@@ -330,9 +416,17 @@ const estilos = StyleSheet.create({
     paddingVertical: 10,           // Aire vertical comprimido al mínimo
     paddingHorizontal: SPACING.md,
     marginVertical: 4,
+  },
+  filaPrincipal: {
     flexDirection: 'row',          // Divide el contenido del botón de marcar
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  botonFicha: {
+    marginTop: SPACING.sm,
+    minHeight: 40,
+    paddingVertical: SPACING.xs,
+    borderColor: '#143343',
   },
   infoContenedor: {
     flex: 1,
@@ -415,6 +509,10 @@ const estilos = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 32,
     marginBottom: 4,
+  },
+  botonGuardarFicha: {
+    backgroundColor: '#90C7A1',
+    marginTop: SPACING.md,
   },
 });
 
