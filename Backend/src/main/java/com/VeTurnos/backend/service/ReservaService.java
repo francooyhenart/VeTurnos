@@ -2,6 +2,10 @@ package com.VeTurnos.backend.service;
 
 import com.VeTurnos.backend.dto.ReservaRequest;
 import com.VeTurnos.backend.dto.ReservaResponse;
+import com.VeTurnos.backend.dto.MetricaSedeDTO;
+import com.VeTurnos.backend.dto.MetricaVeterinarioDTO;
+import com.VeTurnos.backend.dto.EstadisticasResponse;
+import com.VeTurnos.backend.dto.HistorialClinicoResponse;
 import com.VeTurnos.backend.enums.EstadoReserva;
 import com.VeTurnos.backend.model.Cliente;
 import com.VeTurnos.backend.model.Mascota;
@@ -88,12 +92,28 @@ public class ReservaService {
     }
 
     @Transactional(readOnly = true)
-    public List<ReservaResponse> obtenerAgendaDelDia(LocalDate fecha) {
+    public List<ReservaResponse> obtenerAgendaDelDia(LocalDate fecha, Long sedeId, Long veterinarioId) {
         LocalDateTime inicio = fecha.atStartOfDay();
         LocalDateTime fin = fecha.atTime(LocalTime.MAX);
 
-        // Usamos la nueva consulta que contempla turnos cruzados entre días
-        List<Reserva> reservas = reservaRepository.findReservasDelDia(inicio, fin);
+        // Usamos la nueva consulta que contempla turnos cruzados entre días,
+        // con filtro opcional por sede y por veterinario (null = sin filtrar)
+        List<Reserva> reservas = reservaRepository.findReservasDelDia(inicio, fin, sedeId, veterinarioId);
+
+        return reservas.stream()
+                .map(this::mapperAResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Disponibilidad para el cliente (RF: reserva de turnos): solo horarios futuros
+    // y filtrados por sede. Distinto de obtenerAgendaDelDia (usado por vet/gestor).
+    @Transactional(readOnly = true)
+    public List<ReservaResponse> obtenerDisponibilidad(LocalDate fecha, Long sedeId) {
+        LocalDateTime inicio = fecha.atStartOfDay();
+        LocalDateTime fin = fecha.atTime(LocalTime.MAX);
+        LocalDateTime ahora = LocalDateTime.now();
+
+        List<Reserva> reservas = reservaRepository.findDisponibilidad(inicio, fin, ahora, sedeId);
 
         return reservas.stream()
                 .map(this::mapperAResponse)
@@ -129,6 +149,16 @@ public class ReservaService {
         return mapperAResponse(reservaRepository.save(reserva));
     }
 
+    @Transactional
+    public ReservaResponse registrarObservaciones(Long id, String observaciones) {
+        Reserva reserva = reservaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("La reserva no existe"));
+
+        reserva.registrarObservaciones(observaciones);
+
+        return mapperAResponse(reservaRepository.save(reserva));
+    }
+
     private ReservaResponse mapperAResponse(Reserva reserva) {
         return new ReservaResponse(
                 reserva.getId(),
@@ -136,7 +166,9 @@ public class ReservaService {
                 reserva.getMascota().getNombre(),
                 reserva.getFechaHora(),
                 reserva.getEstado().name(),
-                reserva.getDuracionMinutos()
+                reserva.getDuracionMinutos(),
+                reserva.getObservacionesClinicas(),
+                reserva.getVeterinario() != null ? reserva.getVeterinario().getId() : null
         );
     }
 
@@ -146,5 +178,62 @@ public class ReservaService {
         return reservas.stream()
                 .map(this::mapperAResponse)
                 .collect(Collectors.toList());
+    }
+
+    // Punto 6: próximos turnos pendientes de un veterinario, sin importar el día
+    @Transactional(readOnly = true)
+    public List<ReservaResponse> obtenerProximosTurnosVeterinario(Long veterinarioId) {
+        List<Reserva> reservas = reservaRepository.findByVeterinarioIdAndEstadoAndFechaHoraAfterOrderByFechaHoraAsc(
+                veterinarioId, EstadoReserva.PENDIENTE, LocalDateTime.now());
+        return reservas.stream()
+                .map(this::mapperAResponse)
+                .collect(Collectors.toList());
+    }
+
+    // RF-11 / RF-18: Dashboard de estadísticas — total general, por sede y por
+    // veterinario, todo sobre el mismo criterio de "turno atendido" (ASISTIDO o
+    // COMPLETADO, ver nota en contarTurnosPorSede).
+    @Transactional(readOnly = true)
+    public EstadisticasResponse obtenerEstadisticas() {
+        List<EstadoReserva> estadosAtendidos = List.of(EstadoReserva.ASISTIDO, EstadoReserva.COMPLETADO);
+
+        long totalTurnos = reservaRepository.contarTurnosTotal(estadosAtendidos);
+        List<MetricaSedeDTO> porSede = reservaRepository.contarTurnosPorSede(estadosAtendidos);
+        List<MetricaVeterinarioDTO> porVeterinario = reservaRepository.contarTurnosPorVeterinario(estadosAtendidos);
+
+        return new EstadisticasResponse(totalTurnos, porSede, porVeterinario);
+    }
+
+    // Búsqueda Global de Pacientes: historial clínico completo de una mascota,
+    // sin importar la sede o el veterinario que la atendió, en orden cronológico
+    @Transactional(readOnly = true)
+    public List<HistorialClinicoResponse> obtenerHistorialClinico(Long mascotaId) {
+        if (!mascotaRepository.existsById(mascotaId)) {
+            throw new IllegalArgumentException("La mascota especificada no existe");
+        }
+
+        List<Reserva> reservas = reservaRepository.findByMascotaIdAndEstadoInOrderByFechaHoraAsc(
+                mascotaId, List.of(EstadoReserva.ASISTIDO, EstadoReserva.COMPLETADO));
+
+        return reservas.stream()
+                .map(this::mapperAHistorial)
+                .collect(Collectors.toList());
+    }
+
+    private HistorialClinicoResponse mapperAHistorial(Reserva reserva) {
+        String nombreVeterinario = reserva.getVeterinario() != null
+                ? reserva.getVeterinario().getNombreCompleto()
+                : null;
+        String nombreSede = (reserva.getVeterinario() != null && reserva.getVeterinario().getSede() != null)
+                ? reserva.getVeterinario().getSede().getNombre()
+                : null;
+
+        return new HistorialClinicoResponse(
+                reserva.getId(),
+                reserva.getFechaHora(),
+                nombreVeterinario,
+                nombreSede,
+                reserva.getObservacionesClinicas()
+        );
     }
 }

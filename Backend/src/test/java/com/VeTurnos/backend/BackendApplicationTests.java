@@ -1,4 +1,4 @@
-package com.veturnos.backend;
+package com.VeTurnos.backend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

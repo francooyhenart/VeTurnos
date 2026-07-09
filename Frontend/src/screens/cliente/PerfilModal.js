@@ -5,14 +5,17 @@ import {
   SafeAreaView,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { BotonPrimario } from '../../components/ui';
-import { COLORS, FONT_SIZE, SPACING, BORDER_RADIUS } from '../../constants';
+import { FONT_SIZE, SPACING } from '../../constants';
 
-const ItemMenu = ({ titulo, onPress }) => (
+// Punto 4: mismo componente base para las 3 opciones (Configuración, Ayuda,
+// Cerrar sesión) para que se vean del mismo grupo; `colorTexto` es la única
+// variación permitida, para distinguir semánticamente la acción destructiva.
+const ItemMenu = ({ titulo, onPress, colorTexto }) => (
   <TouchableOpacity style={estilos.itemMenu} onPress={onPress} activeOpacity={0.8}>
-    <Text style={estilos.itemMenuTexto}>{titulo}</Text>
+    <Text style={[estilos.itemMenuTexto, colorTexto && { color: colorTexto }]}>{titulo}</Text>
   </TouchableOpacity>
 );
 
@@ -44,14 +47,18 @@ const PerfilModal = ({ navigation }) => {
       </View>
 
       <View style={estilos.menu}>
-        <ItemMenu titulo="Configuración" onPress={() => {}} />
-        <ItemMenu titulo="Ayuda" onPress={() => {}} />
-        
-        {/* 🚀 Botón Cerrar Sesión Verde Pastel */}
-        <BotonPrimario
+        <ItemMenu
+          titulo="Configuración"
+          onPress={() => Alert.alert('Configuración', 'Próximamente')}
+        />
+        <ItemMenu
+          titulo="Ayuda"
+          onPress={() => Alert.alert('Ayuda', 'Contacto Manager: manager@test.com')}
+        />
+        <ItemMenu
           titulo="Cerrar sesión"
           onPress={manejarCerrarSesion}
-          estilo={estilos.botonCerrarSesion}
+          colorTexto="#B91C1C"
         />
       </View>
     </SafeAreaView>
@@ -99,25 +106,21 @@ const estilos = StyleSheet.create({
     color: '#143343', // 🎨 Letra oscura (Azul Petróleo) para que contraste
   },
   menu: {
-    gap: SPACING.sm,
+    gap: SPACING.md,
   },
   itemMenu: {
     backgroundColor: '#E3E3E3', // 🎨 Barras gris claro idénticas a los inputs del Figma
-    borderRadius: 8,
+    borderRadius: 12,
+    marginHorizontal: 20,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
     minHeight: 52,
     justifyContent: 'center',
-    marginVertical: 2,
   },
   itemMenuTexto: {
     fontSize: FONT_SIZE.md,
     color: '#1F1F1F', // 🎨 Texto oscuro sobre el fondo gris claro
     fontWeight: '700',
-  },
-  botonCerrarSesion: {
-    backgroundColor: '#90C7A1', // 🎨 Botón Cerrar Sesión en Verde Claro
-    marginTop: SPACING.xl,
   },
 });
 

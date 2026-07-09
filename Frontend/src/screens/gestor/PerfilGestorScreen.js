@@ -5,10 +5,18 @@ import {
   SafeAreaView,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { BotonPrimario } from '../../components/ui';
 import { FONT_SIZE, SPACING } from '../../constants';
+
+// Mismo componente base que usa el menú del cliente (PerfilModal.js), para que
+// los tres roles compartan la misma estética de menú.
+const ItemMenu = ({ titulo, onPress, colorTexto }) => (
+  <TouchableOpacity style={estilos.itemMenu} onPress={onPress} activeOpacity={0.8}>
+    <Text style={[estilos.itemMenuTexto, colorTexto && { color: colorTexto }]}>{titulo}</Text>
+  </TouchableOpacity>
+);
 
 const PerfilGestorScreen = ({ navigation }) => {
   const { usuario, cerrarSesion } = useAuth();
@@ -38,12 +46,19 @@ const PerfilGestorScreen = ({ navigation }) => {
         <Text style={estilos.nombreUsuario}>{nombre}</Text>
       </View>
 
-      {/* Menú reducido únicamente a cerrar sesión */}
       <View style={estilos.menu}>
-        <BotonPrimario
+        <ItemMenu
+          titulo="Configuración"
+          onPress={() => Alert.alert('Configuración', 'Próximamente')}
+        />
+        <ItemMenu
+          titulo="Ayuda"
+          onPress={() => Alert.alert('Ayuda', 'Contacto: manager@test.com')}
+        />
+        <ItemMenu
           titulo="Cerrar sesión"
           onPress={manejarCerrarSesion}
-          estilo={estilos.botonCerrarSesion}
+          colorTexto="#B91C1C"
         />
       </View>
     </SafeAreaView>
@@ -92,9 +107,21 @@ const estilos = StyleSheet.create({
   },
   menu: {
     marginTop: SPACING.xl,
+    gap: SPACING.md,
   },
-  botonCerrarSesion: {
-    backgroundColor: '#90C7A1',
+  itemMenu: {
+    backgroundColor: '#E3E3E3',
+    borderRadius: 12,
+    marginHorizontal: 20,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    minHeight: 52,
+    justifyContent: 'center',
+  },
+  itemMenuTexto: {
+    fontSize: FONT_SIZE.md,
+    color: '#1F1F1F',
+    fontWeight: '700',
   },
 });
 

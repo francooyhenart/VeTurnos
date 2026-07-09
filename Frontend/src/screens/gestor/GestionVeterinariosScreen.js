@@ -14,12 +14,19 @@ import {
   EstadoVacio,
   AlertaError,
   ModalConfirmacion,
+  SelectorCampo,
 } from '../../components/ui';
 import { FONT_SIZE, SPACING } from '../../constants';
-import { obtenerVeterinarios, eliminarVeterinario } from '../../services/api';
+import { obtenerVeterinarios, eliminarVeterinario, obtenerSedes } from '../../services/api';
 
-const ItemVeterinario = ({ veterinario, onEditar, onEliminar, onVerAgenda }) => (
-  <View style={estilos.itemVeterinario}>
+// Punto 1: toda la tarjeta lleva al detalle (modo vista); el lápiz salta
+// directo a edición sin pasar por el detalle primero.
+const ItemVeterinario = ({ veterinario, onVerDetalle, onEditar, onEliminar, onVerAgenda }) => (
+  <TouchableOpacity
+    style={estilos.itemVeterinario}
+    onPress={() => onVerDetalle(veterinario)}
+    activeOpacity={0.8}
+  >
     <View style={estilos.infoVeterinario}>
       <Text style={estilos.nombreVeterinario}>{veterinario.nombreCompleto}</Text>
       <Text style={estilos.matricula}>Matrícula: {veterinario.matricula}</Text>
@@ -47,7 +54,7 @@ const ItemVeterinario = ({ veterinario, onEditar, onEliminar, onVerAgenda }) => 
         <Text style={estilos.botonTexto}>🗑️</Text>
       </TouchableOpacity>
     </View>
-  </View>
+  </TouchableOpacity>
 );
 
 const GestionVeterinariosScreen = ({ navigation }) => {
@@ -57,6 +64,10 @@ const GestionVeterinariosScreen = ({ navigation }) => {
   const [busqueda, setBusqueda] = useState('');
   const [vetAEliminar, setVetAEliminar] = useState(null);
   const [eliminando, setEliminando] = useState(false);
+
+  // Punto 1: filtro por sede
+  const [sedes, setSedes] = useState([]);
+  const [sedeIdFiltro, setSedeIdFiltro] = useState('');
 
   const cargarVeterinarios = useCallback(async () => {
     setCargando(true);
@@ -76,10 +87,19 @@ const GestionVeterinariosScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation, cargarVeterinarios]);
 
-  const veterinariosFiltrados = veterinarios.filter(vet =>
-    vet.nombreCompleto.toLowerCase().includes(busqueda.toLowerCase()) ||
-    vet.matricula.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  useEffect(() => {
+    obtenerSedes()
+      .then(setSedes)
+      .catch(() => setSedes([]));
+  }, []);
+
+  const veterinariosFiltrados = veterinarios.filter((vet) => {
+    const coincideBusqueda =
+      vet.nombreCompleto.toLowerCase().includes(busqueda.toLowerCase()) ||
+      vet.matricula.toLowerCase().includes(busqueda.toLowerCase());
+    const coincideSede = !sedeIdFiltro || String(vet.sede?.id) === sedeIdFiltro;
+    return coincideBusqueda && coincideSede;
+  });
 
   const confirmarEliminacion = async () => {
     if (!vetAEliminar) return;
@@ -96,7 +116,7 @@ const GestionVeterinariosScreen = ({ navigation }) => {
     }
   };
 
-  if (cargando) return <CargandoPantalla />;
+  if (cargando) return <CargandoPantalla oscuro />;
 
   return (
     <SafeAreaView style={estilos.safeArea}>
@@ -115,6 +135,16 @@ const GestionVeterinariosScreen = ({ navigation }) => {
         >
           <Text style={estilos.botonAgregar}>➕</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Punto 1: filtro por Sede */}
+      <View style={estilos.filtroSedeContenedor}>
+        <SelectorCampo
+          placeholder="Todas las sedes"
+          valor={sedeIdFiltro}
+          alCambiar={setSedeIdFiltro}
+          opciones={sedes.map((s) => ({ label: s.nombre, value: String(s.id) }))}
+        />
       </View>
 
       {/* Buscador */}
@@ -137,7 +167,8 @@ const GestionVeterinariosScreen = ({ navigation }) => {
         renderItem={({ item }) => (
           <ItemVeterinario
             veterinario={item}
-            onEditar={(vet) => navigation.navigate('DetalleVeterinario', { veterinario: vet })}
+            onVerDetalle={(vet) => navigation.navigate('DetalleVeterinario', { veterinario: vet })}
+            onEditar={(vet) => navigation.navigate('DetalleVeterinario', { veterinario: vet, modoInicial: 'edicion' })}
             onEliminar={setVetAEliminar}
             onVerAgenda={(vet) => navigation.navigate('AgendaVeterinario', { veterinario: vet })}
           />
@@ -183,6 +214,10 @@ const estilos = StyleSheet.create({
   },
   botonAgregar: {
     fontSize: FONT_SIZE.lg,
+  },
+  filtroSedeContenedor: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
   },
   buscadorContenedor: {
     paddingHorizontal: SPACING.lg,

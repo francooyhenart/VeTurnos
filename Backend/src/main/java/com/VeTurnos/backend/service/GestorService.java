@@ -4,8 +4,10 @@ package com.VeTurnos.backend.service;
 
 import com.VeTurnos.backend.model.Veterinario;
 import com.VeTurnos.backend.model.Reserva;
+import com.VeTurnos.backend.model.Sede;
 import com.VeTurnos.backend.repository.VeterinarioRepository;
 import com.VeTurnos.backend.repository.ReservaRepository;
+import com.VeTurnos.backend.repository.SedeRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
@@ -17,10 +19,13 @@ public class GestorService {
 
     private final VeterinarioRepository veterinarioRepository;
     private final ReservaRepository reservaRepository;
+    private final SedeRepository sedeRepository;
 
-    public GestorService(VeterinarioRepository veterinarioRepository, ReservaRepository reservaRepository) {
+    public GestorService(VeterinarioRepository veterinarioRepository, ReservaRepository reservaRepository,
+                          SedeRepository sedeRepository) {
         this.veterinarioRepository = veterinarioRepository;
         this.reservaRepository = reservaRepository;
+        this.sedeRepository = sedeRepository;
     }
 
     /**
@@ -28,7 +33,7 @@ public class GestorService {
      */
     public Veterinario crearVeterinario(String nombreCompleto, String dni, String telefono,
                                          String email, String password, String matricula,
-                                         String especialidad) {
+                                         String especialidad, Long sedeId) {
         // Validar que email sea único
         if (veterinarioRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("El email ya está registrado en el sistema");
@@ -50,15 +55,21 @@ public class GestorService {
             false  // No es administrador por defecto
         );
 
+        if (sedeId != null) {
+            Sede sede = sedeRepository.findById(sedeId)
+                .orElseThrow(() -> new IllegalArgumentException("Sede no encontrada con ID: " + sedeId));
+            veterinario.setSede(sede);
+        }
+
         return veterinarioRepository.save(veterinario);
     }
 
     /**
-     * READ - Obtener todos los veterinarios
+     * READ - Obtener todos los veterinarios activos
      */
     @Transactional(readOnly = true)
     public List<Veterinario> obtenerTodosLosVeterinarios() {
-        return veterinarioRepository.findAll();
+        return veterinarioRepository.findByActivoTrue();
     }
 
     /**
@@ -80,10 +91,12 @@ public class GestorService {
     }
 
     /**
-     * UPDATE - Actualizar datos del veterinario
+     * UPDATE - Actualizar datos del veterinario.
+     * Cada campo se actualiza solo si viene presente en el payload (partial update).
      */
     public Veterinario actualizarVeterinario(Long id, String nombreCompleto, String telefono,
-                                             String especialidad) {
+                                             String especialidad, String email, String matricula,
+                                             Long sedeId) {
         Veterinario veterinario = obtenerVeterinarioPorId(id);
 
         if (nombreCompleto != null && !nombreCompleto.trim().isEmpty()) {
@@ -96,6 +109,26 @@ public class GestorService {
 
         if (especialidad != null) {
             veterinario.setEspecialidad(especialidad);
+        }
+
+        if (email != null && !email.trim().isEmpty() && !email.equals(veterinario.getEmail())) {
+            if (veterinarioRepository.findByEmail(email).isPresent()) {
+                throw new IllegalArgumentException("El email ya está registrado en el sistema");
+            }
+            veterinario.setEmail(email);
+        }
+
+        if (matricula != null && !matricula.trim().isEmpty() && !matricula.equals(veterinario.getMatricula())) {
+            if (veterinarioRepository.findByMatricula(matricula).isPresent()) {
+                throw new IllegalArgumentException("La matrícula profesional ya existe");
+            }
+            veterinario.setMatricula(matricula);
+        }
+
+        if (sedeId != null && (veterinario.getSede() == null || !sedeId.equals(veterinario.getSede().getId()))) {
+            Sede sede = sedeRepository.findById(sedeId)
+                .orElseThrow(() -> new IllegalArgumentException("Sede no encontrada con ID: " + sedeId));
+            veterinario.setSede(sede);
         }
 
         return veterinarioRepository.save(veterinario);
@@ -111,13 +144,14 @@ public class GestorService {
     }
 
     /**
-     * DELETE - Eliminar veterinario
+     * DELETE - Desactivar veterinario (borrado lógico).
+     * Se evita el delete físico porque el veterinario puede tener reservas
+     * asociadas (FK en Reserva.veterinario_id) y su eliminación rompería esa relación.
      */
     public void eliminarVeterinario(Long id) {
-        if (!veterinarioRepository.existsById(id)) {
-            throw new IllegalArgumentException("Veterinario no encontrado con ID: " + id);
-        }
-        veterinarioRepository.deleteById(id);
+        Veterinario veterinario = obtenerVeterinarioPorId(id);
+        veterinario.setActivo(false);
+        veterinarioRepository.save(veterinario);
     }
 
     /**

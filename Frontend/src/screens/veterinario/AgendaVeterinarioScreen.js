@@ -14,7 +14,7 @@ import {
   AlertaError,
 } from '../../components/ui';
 import { FONT_SIZE, SPACING } from '../../constants';
-import { obtenerAgendaVeterinario } from '../../services/api';
+import { obtenerAgendaVeterinario, obtenerProximosTurnosVeterinario } from '../../services/api';
 
 const formatearFechaHoraRango = (fechaHoraStr, duracionMinutos = 30) => {
   if (!fechaHoraStr) return '';
@@ -72,26 +72,44 @@ const AgendaVeterinarioScreen = ({ navigation, route }) => {
   const [turnos, setTurnos] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
+  // Punto 6: segmented control "Turnos Hoy" / "Próximos Turnos"
+  const [vista, setVista] = useState('hoy');
+
+  const cargarHoy = useCallback(async () => {
+    const data = await obtenerAgendaVeterinario(veterinario.id);
+    const hoyStr = new Date().toDateString();
+    const deHoy = data.filter((t) => new Date(t.fechaHora).toDateString() === hoyStr);
+    deHoy.sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora));
+    return deHoy;
+  }, [veterinario.id]);
+
+  const cargarProximos = useCallback(async () => {
+    return obtenerProximosTurnosVeterinario(veterinario.id);
+  }, [veterinario.id]);
 
   const cargarAgenda = useCallback(async () => {
     setCargando(true);
     setError('');
     try {
-      const data = await obtenerAgendaVeterinario(veterinario.id);
+      const data = vista === 'hoy' ? await cargarHoy() : await cargarProximos();
       setTurnos(data);
     } catch (e) {
       setError(e.message || 'Error al cargar la agenda');
     } finally {
       setCargando(false);
     }
-  }, [veterinario.id]);
+  }, [vista, cargarHoy, cargarProximos]);
+
+  useEffect(() => {
+    cargarAgenda();
+  }, [cargarAgenda]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', cargarAgenda);
     return unsubscribe;
   }, [navigation, cargarAgenda]);
 
-  if (cargando) return <CargandoPantalla />;
+  if (cargando) return <CargandoPantalla oscuro />;
 
   return (
     <SafeAreaView style={estilos.safeArea}>
@@ -109,6 +127,26 @@ const AgendaVeterinarioScreen = ({ navigation, route }) => {
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Text style={estilos.botonRefresh}>🔄</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Punto 6: segmented control */}
+      <View style={estilos.segmentado}>
+        <TouchableOpacity
+          style={[estilos.segmentoBoton, vista === 'hoy' && estilos.segmentoBotonActivo]}
+          onPress={() => setVista('hoy')}
+        >
+          <Text style={[estilos.segmentoTexto, vista === 'hoy' && estilos.segmentoTextoActivo]}>
+            Turnos Hoy
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[estilos.segmentoBoton, vista === 'proximos' && estilos.segmentoBotonActivo]}
+          onPress={() => setVista('proximos')}
+        >
+          <Text style={[estilos.segmentoTexto, vista === 'proximos' && estilos.segmentoTextoActivo]}>
+            Próximos Turnos
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -130,7 +168,13 @@ const AgendaVeterinarioScreen = ({ navigation, route }) => {
         renderItem={({ item }) => <ItemTurno turno={item} />}
         contentContainerStyle={estilos.lista}
         ListEmptyComponent={
-          <EstadoVacio mensaje="Este veterinario no tiene turnos programados." />
+          <EstadoVacio
+            mensaje={
+              vista === 'hoy'
+                ? 'Este veterinario no tiene turnos programados para hoy.'
+                : 'Este veterinario no tiene próximos turnos pendientes.'
+            }
+          />
         }
       />
     </SafeAreaView>
@@ -163,6 +207,33 @@ const estilos = StyleSheet.create({
   },
   botonRefresh: {
     fontSize: FONT_SIZE.lg,
+  },
+  segmentado: {
+    flexDirection: 'row',
+    backgroundColor: '#0F2733',
+    borderRadius: 10,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.xs,
+    padding: 4,
+  },
+  segmentoBoton: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+  segmentoBotonActivo: {
+    backgroundColor: '#90C7A1',
+  },
+  segmentoTexto: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: '600',
+    color: '#A3E1FC',
+  },
+  segmentoTextoActivo: {
+    color: '#143343',
+    fontWeight: '700',
   },
   tarjetaVeterinario: {
     backgroundColor: '#A3E1FC',

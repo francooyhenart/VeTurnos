@@ -12,7 +12,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { login } from '../../services/api';
 import { CampoTexto, BotonPrimario, AlertaError } from '../../components/ui';
-import { COLORS, FONT_SIZE, SPACING, BORDER_RADIUS } from '../../constants';
+import { FONT_SIZE, SPACING } from '../../constants';
 
 const logoImagen = require('../../logo.jpg');
 
@@ -65,12 +65,12 @@ const LoginScreen = ({ navigation }) => {
       >
         <View style={estilos.contenedor}>
           
-          {/* 🚀 EL LOGO EN FORMATO CÍRCULO ESTILO FIGMA */}
+          {/* 🚀 EL LOGO EN CUADRADO CON BORDES REDONDEADOS */}
           <View style={estilos.logoContenedor}>
-            <View style={estilos.logoCirculo}>
-              <Image 
-                source={logoImagen} 
-                style={estilos.logo} 
+            <View style={estilos.logoCuadrado}>
+              <Image
+                source={logoImagen}
+                style={estilos.logo}
                 resizeMode="contain"
               />
             </View>
@@ -129,25 +129,20 @@ const estilos = StyleSheet.create({
     justifyContent: 'center',
     minHeight: '100%',
   },
-  /* 🚀 Estilos para el contenedor y círculo del logo */
+  /* 🚀 Estilos para el contenedor cuadrado del logo */
   logoContenedor: {
     alignItems: 'center',
     marginBottom: SPACING.md,
   },
-  logoCirculo: {
+  logoCuadrado: {
     width: 130,
     height: 130,
-    borderRadius: 65,
-    borderWidth: 3,
-    borderColor: '#FFFFFF',    // Borde blanco idéntico al Figma
-    backgroundColor: '#90C7A1', // Fondo verde pastel del logo
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',        // Asegura que la imagen no se desborde del círculo
   },
   logo: {
-    width: '85%',
-    height: '85%',
+    width: '100%',
+    height: '100%',
   },
   titulo: {
     fontSize: FONT_SIZE.xxl,

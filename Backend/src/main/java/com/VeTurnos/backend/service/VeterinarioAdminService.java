@@ -94,7 +94,8 @@ public class VeterinarioAdminService {
             veterinario.getEmail(),
             veterinario.getMatricula(),
             veterinario.getEspecialidad(),
-            veterinario.getTelefono()
+            veterinario.getTelefono(),
+            null // Este servicio está deprecado (ver VeterinarioAdminController); no maneja sede
         );
     }
 }

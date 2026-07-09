@@ -96,6 +96,13 @@ export const ESPECIES = [
   { label: 'Otro', value: 'OTRO' },
 ];
 
+export const ESPECIALIDADES = [
+  { label: 'Clínica General', value: 'Clínica General' },
+  { label: 'Cirugía', value: 'Cirugía' },
+  { label: 'Dermatología', value: 'Dermatología' },
+  { label: 'Cardiología', value: 'Cardiología' },
+];
+
 export const MOTIVOS = [
   { label: 'Control general', value: 'Control' },
   { label: 'Vacunación', value: 'Vacunacion' },

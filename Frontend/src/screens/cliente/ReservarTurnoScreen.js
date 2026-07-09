@@ -8,9 +8,16 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { listarMascotasPorCliente, obtenerAgenda, crearReserva } from '../../services/api';
+import {
+  listarMascotasPorCliente,
+  obtenerDisponibilidad,
+  obtenerSedes,
+  obtenerVeterinarios,
+  crearReserva,
+} from '../../services/api';
 import {
   SelectorCampo,
+  SelectorFecha,
   BotonPrimario,
   AlertaError,
   ModalExito,
@@ -21,22 +28,6 @@ import {
   COLORS, FONT_SIZE, SPACING, BORDER_RADIUS, MOTIVOS, HORARIOS_DISPONIBLES,
 } from '../../constants';
 
-// Formatea una fecha como "Lun 11 May"
-const formatearFecha = (fecha) => {
-  return fecha.toLocaleDateString('es-AR', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  });
-};
-
-// Agrega días a una fecha
-const addDias = (fecha, dias) => {
-  const nueva = new Date(fecha);
-  nueva.setDate(nueva.getDate() + dias);
-  return nueva;
-};
-
 const ReservarTurnoScreen = ({ navigation }) => {
   const { usuario } = useAuth();
 
@@ -46,6 +37,14 @@ const ReservarTurnoScreen = ({ navigation }) => {
   const [fecha, setFecha] = useState(new Date());
   const [horariosOcupados, setHorariosOcupados] = useState([]);
   const [horarioSeleccionado, setHorarioSeleccionado] = useState(null);
+
+  // Punto 3: la Sede es el primer paso; recién con ella elegida se cargan
+  // los veterinarios disponibles en esa sede.
+  const [sedes, setSedes] = useState([]);
+  const [cargandoSedes, setCargandoSedes] = useState(true);
+  const [sedeId, setSedeId] = useState('');
+  const [veterinarios, setVeterinarios] = useState([]);
+  const [veterinarioId, setVeterinarioId] = useState('');
 
   const [cargandoMascotas, setCargandoMascotas] = useState(true);
   const [cargandoAgenda, setCargandoAgenda] = useState(false);
@@ -68,41 +67,66 @@ const ReservarTurnoScreen = ({ navigation }) => {
     cargar();
   }, []);
 
-  // Cargar agenda cuando cambia la fecha
+  // Cargar sedes al montar
+  useEffect(() => {
+    obtenerSedes()
+      .then(setSedes)
+      .catch(() => setSedes([]))
+      .finally(() => setCargandoSedes(false));
+  }, []);
+
+  // Al elegir sede, cargar solo los veterinarios que pertenecen a ella
+  useEffect(() => {
+    if (!sedeId) {
+      setVeterinarios([]);
+      setVeterinarioId('');
+      return;
+    }
+    setVeterinarioId('');
+    obtenerVeterinarios()
+      .then((data) => {
+        const deLaSede = data.filter((v) => String(v.sede?.id) === sedeId);
+        setVeterinarios(deLaSede);
+      })
+      .catch(() => setVeterinarios([]));
+  }, [sedeId]);
+
+  // Cargar disponibilidad cuando cambia la fecha o la sede
   const cargarAgenda = useCallback(async () => {
+    if (!sedeId) return;
     setCargandoAgenda(true);
     setHorarioSeleccionado(null);
     try {
       const fechaStr = fecha.toISOString().split('T')[0];
-      const reservas = await obtenerAgenda(fechaStr);
-      
+      const reservas = await obtenerDisponibilidad(fechaStr, parseInt(sedeId, 10));
+
       const ocupados = [];
-      
+
       reservas
         .filter((r) => r.estado !== 'CANCELADO')
         .forEach((r) => {
           const inicio = new Date(r.fechaHora);
           const duracion = r.duracionMinutos || 30;
-          
+
           let tiempoActual = new Date(inicio.getTime());
           const fin = new Date(inicio.getTime() + duracion * 60000);
-          
+
           while (tiempoActual < fin) {
             const hStr = String(tiempoActual.getHours()).padStart(2, '0');
             const mStr = String(tiempoActual.getMinutes()).padStart(2, '0');
             ocupados.push(`${hStr}:${mStr}`);
-            
+
             tiempoActual.setMinutes(tiempoActual.getMinutes() + 30);
           }
         });
-        
+
       setHorariosOcupados(ocupados);
     } catch (_) {
       setHorariosOcupados([]);
     } finally {
       setCargandoAgenda(false);
     }
-  }, [fecha]);
+  }, [fecha, sedeId]);
 
   useEffect(() => {
     cargarAgenda();
@@ -152,11 +176,14 @@ const ReservarTurnoScreen = ({ navigation }) => {
 
     setReservando(true);
     try {
-      await crearReserva({
+      const body = {
         clienteId: usuario.id,
         mascotaId: parseInt(mascotaId, 10),
-        fechaHora: fechaHoraLocalStr      
-      });
+        fechaHora: fechaHoraLocalStr,
+      };
+      if (veterinarioId) body.veterinarioId = parseInt(veterinarioId, 10);
+
+      await crearReserva(body);
       setModalExito(true);
     } catch (e) {
       setError(e.message || 'Error al reservar el turno.');
@@ -165,7 +192,7 @@ const ReservarTurnoScreen = ({ navigation }) => {
     }
   };
 
-  if (cargandoMascotas) return <CargandoPantalla />;
+  if (cargandoMascotas || cargandoSedes) return <CargandoPantalla oscuro />;
 
   return (
     <SafeAreaView style={estilos.safeArea}>
@@ -174,96 +201,117 @@ const ReservarTurnoScreen = ({ navigation }) => {
       <ScrollView contentContainerStyle={estilos.scroll} keyboardShouldPersistTaps="handled">
         <Text style={estilos.titulo}>Turnos disponibles</Text>
 
-        {/* Selector de mascota */}
-        <SelectorCampo
-          placeholder="Mascota"
-          valor={mascotaId}
-          alCambiar={setMascotaId}
-          opciones={mascotas}
-          estilo={{ marginBottom: SPACING.sm }}
-        />
-
-        {/* Selector de motivo */}
-        <SelectorCampo
-          placeholder="Motivo"
-          valor={motivo}
-          alCambiar={setMotivo}
-          opciones={MOTIVOS}
-          estilo={{ marginBottom: SPACING.md }}
-        />
-
-        {/* Navegador de fecha */}
-        <View style={estilos.fechaNavegador}>
-          <TouchableOpacity
-            onPress={() => setFecha((f) => addDias(f, -1))}
-            style={estilos.fechaBoton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={estilos.fechaFlecha}>‹</Text>
-          </TouchableOpacity>
-          <Text style={estilos.fechaTexto}>{formatearFecha(fecha)}</Text>
-          <TouchableOpacity
-            onPress={() => setFecha((f) => addDias(f, 1))}
-            style={estilos.fechaBoton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={estilos.fechaFlecha}>›</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Grilla de horarios */}
-        {cargandoAgenda ? (
-          <View style={estilos.cargandoHorarios}>
-            <Text style={estilos.cargandoTexto}>Cargando disponibilidad...</Text>
-          </View>
+        {/* Punto 3: primer paso obligatorio, elegir Sede */}
+        {sedes.length === 0 ? (
+          <Text style={estilos.avisoSinSedes}>
+            No hay sedes cargadas todavía. Comunicate con la clínica para poder reservar.
+          </Text>
         ) : (
-          <>
-            <View style={estilos.grilla}>
-              {HORARIOS_DISPONIBLES.map((horario) => {
-                const ocupado = horariosOcupados.includes(horario);
-                const pasado = esPasado(horario);
-                const seleccionado = horario === horarioSeleccionado;
-                const noDisponible = ocupado || pasado;
-
-                return (
-                  <TouchableOpacity
-                    key={horario}
-                    style={[
-                      estilos.horarioBotón,
-                      noDisponible && estilos.horarioOcupado,
-                      seleccionado && estilos.horarioSeleccionado,
-                    ]}
-                    onPress={() => manejarSeleccionarHorario(horario)}
-                    disabled={noDisponible}
-                    accessibilityLabel={`Horario ${horario}${noDisponible ? ', no disponible' : ''}`}
-                  >
-                    <Text
-                      style={[
-                        estilos.horarioTexto,
-                        noDisponible && estilos.horarioTextoOcupado,
-                        seleccionado && estilos.horarioTextoSeleccionado,
-                      ]}
-                    >
-                      {horario}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            <Text style={estilos.leyenda}>Gris = no disponible</Text>
-          </>
+          <SelectorCampo
+            placeholder="Sede"
+            valor={sedeId}
+            alCambiar={setSedeId}
+            opciones={sedes.map((s) => ({ label: s.nombre, value: String(s.id) }))}
+            estilo={{ marginBottom: SPACING.sm }}
+          />
         )}
 
-        {!!error && <AlertaError mensaje={error} estilo={{ marginTop: SPACING.md }} />}
+        {!!sedeId && (
+          <>
+            {/* Selector de veterinario, ya filtrado por la sede elegida */}
+            <SelectorCampo
+              placeholder="Veterinario (Opcional)"
+              valor={veterinarioId}
+              alCambiar={setVeterinarioId}
+              opciones={veterinarios.map((v) => ({ label: v.nombreCompleto, value: String(v.id) }))}
+              estilo={{ marginBottom: SPACING.sm }}
+            />
+            {veterinarios.length === 0 && (
+              <Text style={estilos.avisoSinVets}>
+                Esta sede todavía no tiene veterinarios asignados; el turno se reservará sin asignar.
+              </Text>
+            )}
 
-        {/* Botón Reservar */}
-        <BotonPrimario
-          titulo="Reservar"
-          onPress={manejarReservar}
-          cargando={reservando}
-          deshabilitado={!horarioSeleccionado || !mascotaId}
-          estilo={estilos.botonReservar}
-        />
+            {/* Selector de mascota */}
+            <SelectorCampo
+              placeholder="Mascota"
+              valor={mascotaId}
+              alCambiar={setMascotaId}
+              opciones={mascotas}
+              estilo={{ marginBottom: SPACING.sm }}
+            />
+
+            {/* Selector de motivo */}
+            <SelectorCampo
+              placeholder="Motivo"
+              valor={motivo}
+              alCambiar={setMotivo}
+              opciones={MOTIVOS}
+              estilo={{ marginBottom: SPACING.md }}
+            />
+
+            {/* Punto 5: selector de fecha con calendario propio */}
+            <SelectorFecha
+              valor={fecha}
+              alCambiar={setFecha}
+              estilo={{ marginBottom: SPACING.md }}
+            />
+
+            {/* Grilla de horarios */}
+            {cargandoAgenda ? (
+              <View style={estilos.cargandoHorarios}>
+                <Text style={estilos.cargandoTexto}>Cargando disponibilidad...</Text>
+              </View>
+            ) : (
+              <>
+                <View style={estilos.grilla}>
+                  {HORARIOS_DISPONIBLES.map((horario) => {
+                    const ocupado = horariosOcupados.includes(horario);
+                    const pasado = esPasado(horario);
+                    const seleccionado = horario === horarioSeleccionado;
+                    const noDisponible = ocupado || pasado;
+
+                    return (
+                      <TouchableOpacity
+                        key={horario}
+                        style={[
+                          estilos.horarioBotón,
+                          noDisponible && estilos.horarioOcupado,
+                          seleccionado && estilos.horarioSeleccionado,
+                        ]}
+                        onPress={() => manejarSeleccionarHorario(horario)}
+                        disabled={noDisponible}
+                        accessibilityLabel={`Horario ${horario}${noDisponible ? ', no disponible' : ''}`}
+                      >
+                        <Text
+                          style={[
+                            estilos.horarioTexto,
+                            noDisponible && estilos.horarioTextoOcupado,
+                            seleccionado && estilos.horarioTextoSeleccionado,
+                          ]}
+                        >
+                          {horario}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <Text style={estilos.leyenda}>Gris = no disponible</Text>
+              </>
+            )}
+
+            {!!error && <AlertaError mensaje={error} estilo={{ marginTop: SPACING.md }} />}
+
+            {/* Botón Reservar */}
+            <BotonPrimario
+              titulo="Reservar"
+              onPress={manejarReservar}
+              cargando={reservando}
+              deshabilitado={!horarioSeleccionado || !mascotaId}
+              estilo={estilos.botonReservar}
+            />
+          </>
+        )}
       </ScrollView>
 
       {/* Modal de éxito */}
@@ -302,32 +350,18 @@ const estilos = StyleSheet.create({
     textAlign: 'center',
     marginBottom: SPACING.lg,
   },
-  fechaNavegador: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#E3E3E3',
-    borderRadius: 8,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.md,
-    minHeight: 52,
+  avisoSinSedes: {
+    fontSize: FONT_SIZE.sm,
+    color: '#A3E1FC',
+    fontStyle: 'italic',
+    marginVertical: SPACING.sm,
+    textAlign: 'center',
   },
-  fechaBoton: {
-    minWidth: 48,
-    minHeight: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fechaFlecha: {
-    fontSize: 28,
-    color: '#1F1F1F',
-    fontWeight: '400',
-  },
-  fechaTexto: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '700',
-    color: '#1F1F1F',
+  avisoSinVets: {
+    fontSize: FONT_SIZE.xs,
+    color: '#A3E1FC',
+    fontStyle: 'italic',
+    marginBottom: SPACING.sm,
   },
   grilla: {
     flexDirection: 'row',

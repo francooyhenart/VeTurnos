@@ -112,6 +112,17 @@ export const listarMascotasPorCliente = async (clienteId) => {
   return response.data;
 };
 
+/**
+ * Búsqueda Global de Pacientes (Veterinario): por nombre de mascota o DNI del dueño.
+ * GET /api/mascotas/buscar?query=...
+ * @param {string} query
+ * @returns {Promise<MascotaResponse[]>}
+ */
+export const buscarMascotas = async (query) => {
+  const response = await api.get('/mascotas/buscar', { params: { query } });
+  return response.data;
+};
+
 // ═══════════════════════════════════════════
 //  RESERVAS ENDPOINTS  →  /api/reservas
 // ═══════════════════════════════════════════
@@ -140,13 +151,31 @@ export const cancelarReserva = async (id) => {
 };
 
 /**
- * Obtiene la agenda del día (para admin/vet).
- * GET /api/reservas/agenda?fecha=YYYY-MM-DD
+ * Obtiene la agenda del día (para admin/vet), con filtro opcional por sede.
+ * GET /api/reservas/agenda?fecha=YYYY-MM-DD&sedeId=1
  * @param {string} fecha  formato "YYYY-MM-DD"
+ * @param {number|null} sedeId  filtro opcional por sede
  * @returns {Promise<ReservaResponse[]>}
  */
-export const obtenerAgenda = async (fecha) => {
-  const response = await api.get('/reservas/agenda', { params: { fecha } });
+export const obtenerAgenda = async (fecha, sedeId) => {
+  const params = { fecha };
+  if (sedeId) params.sedeId = sedeId;
+  const response = await api.get('/reservas/agenda', { params });
+  return response.data;
+};
+
+/**
+ * Disponibilidad de turnos para el cliente (solo horarios futuros), con
+ * filtro opcional por sede. Distinto de obtenerAgenda (usada por vet/gestor).
+ * GET /api/reservas/disponibilidad?fecha=YYYY-MM-DD&sedeId=1
+ * @param {string} fecha  formato "YYYY-MM-DD"
+ * @param {number|null} sedeId
+ * @returns {Promise<ReservaResponse[]>}
+ */
+export const obtenerDisponibilidad = async (fecha, sedeId) => {
+  const params = { fecha };
+  if (sedeId) params.sedeId = sedeId;
+  const response = await api.get('/reservas/disponibilidad', { params });
   return response.data;
 };
 
@@ -161,6 +190,18 @@ export const registrarAsistencia = async (id, estado, veterinarioId) => {
   const params = { estado };
   if (veterinarioId) params.veterinarioId = veterinarioId;
   const response = await api.patch(`/reservas/${id}/asistencia`, null, { params });
+  return response.data;
+};
+
+/**
+ * Carga o edita el diagnóstico/observaciones clínicas de un turno (ficha médica).
+ * PATCH /api/reservas/:id/observaciones
+ * @param {number} id
+ * @param {string} observacionesClinicas
+ * @returns {Promise<ReservaResponse>}
+ */
+export const actualizarObservaciones = async (id, observacionesClinicas) => {
+  const response = await api.patch(`/reservas/${id}/observaciones`, { observacionesClinicas });
   return response.data;
 };
 
@@ -246,10 +287,11 @@ export const crearVeterinario = async (data) => {
 };
 
 /**
- * Actualiza datos de un veterinario.
+ * Actualiza datos de un veterinario (actualización parcial: los campos
+ * ausentes o vacíos no se modifican en el backend).
  * PUT /api/admin/veterinarios/:id
  * @param {number} id
- * @param {{ nombreCompleto?, telefono?, especialidad? }} data
+ * @param {{ nombreCompleto?, telefono?, especialidad?, email?, matricula? }} data
  * @returns {Promise<VeterinarioResponse>}
  */
 export const actualizarVeterinario = async (id, data) => {
@@ -320,6 +362,85 @@ export const obtenerAgendaCompleta = async () => {
  */
 export const obtenerAgendaVeterinario = async (veterinarioId) => {
   const response = await api.get(`/reservas/veterinario/${veterinarioId}`);
+  return response.data;
+};
+
+/**
+ * Búsqueda Global de Pacientes: historial clínico completo de una mascota
+ * (turnos COMPLETADO), sin importar la sede o el veterinario que la atendió.
+ * GET /api/reservas/historial/:mascotaId
+ * @param {number} mascotaId
+ * @returns {Promise<Array<{ id, fechaHora, nombreVeterinario, nombreSede, observacionesClinicas }>>}
+ */
+export const obtenerHistorialClinico = async (mascotaId) => {
+  const response = await api.get(`/reservas/historial/${mascotaId}`);
+  return response.data;
+};
+
+/**
+ * Punto 6: próximos turnos PENDIENTES de un veterinario, sin importar el día,
+ * ordenados por fecha/hora.
+ * GET /api/reservas/veterinario/:veterinarioId/proximos
+ * @param {number} veterinarioId
+ * @returns {Promise<ReservaResponse[]>}
+ */
+export const obtenerProximosTurnosVeterinario = async (veterinarioId) => {
+  const response = await api.get(`/reservas/veterinario/${veterinarioId}/proximos`);
+  return response.data;
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  SEDES ENDPOINTS  →  /api/sedes
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Crea una nueva sede.
+ * POST /api/sedes
+ * @param {{ nombre, calle, numero, entreCalles? }} data
+ * @returns {Promise<SedeResponse>}
+ */
+export const crearSede = async (data) => {
+  const response = await api.post('/sedes', data);
+  return response.data;
+};
+
+/**
+ * Obtiene la lista de todas las sedes.
+ * GET /api/sedes
+ * @returns {Promise<SedeResponse[]>}
+ */
+export const obtenerSedes = async () => {
+  const response = await api.get('/sedes');
+  return response.data;
+};
+
+/**
+ * Elimina una sede (falla si tiene turnos asignados).
+ * DELETE /api/sedes/:id
+ * @param {number} id
+ * @returns {Promise<{ mensaje: string }>}
+ */
+export const eliminarSede = async (id) => {
+  const response = await api.delete(`/sedes/${id}`);
+  return response.data;
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  MÉTRICAS ENDPOINTS  →  /api/metricas
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * RF-11 / RF-18: Dashboard de estadísticas — total general de turnos
+ * atendidos, desglosados por sede y por veterinario.
+ * GET /api/metricas/estadisticas
+ * @returns {Promise<{
+ *   totalTurnos: number,
+ *   porSede: Array<{ nombreSede, cantidadTurnos }>,
+ *   porVeterinario: Array<{ nombreVeterinario, cantidadTurnos }>
+ * }>}
+ */
+export const obtenerEstadisticas = async () => {
+  const response = await api.get('/metricas/estadisticas');
   return response.data;
 };
 

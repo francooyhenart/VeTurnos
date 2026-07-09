@@ -59,6 +59,16 @@ const InicioGestorScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('AltaVeterinario')}
         />
         <TarjetaAccion
+          titulo="Gestionar Sedes"
+          icono="🏥"
+          onPress={() => navigation.navigate('ListadoSedes')}
+        />
+        <TarjetaAccion
+          titulo="Agregar Sede"
+          icono="➕"
+          onPress={() => navigation.navigate('NuevaSede')}
+        />
+        <TarjetaAccion
           titulo="Agenda del Día"
           icono="📋"
           onPress={() => navigation.navigate('AgendaAdmin')}
@@ -67,6 +77,11 @@ const InicioGestorScreen = ({ navigation }) => {
           titulo="Ver Agenda por Veterinario"
           icono="📅"
           onPress={() => navigation.navigate('AgendaGestor')}
+        />
+        <TarjetaAccion
+          titulo="Ver Estadísticas"
+          icono="📊"
+          onPress={() => navigation.navigate('Estadisticas')}
         />
       </ScrollView>
     </SafeAreaView>

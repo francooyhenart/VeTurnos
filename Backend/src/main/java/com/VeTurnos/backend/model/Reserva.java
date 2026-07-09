@@ -35,6 +35,11 @@ public class Reserva {
 
     private Integer duracionMinutos;
 
+    // Nullable, sin default: se completa cuando el veterinario atiende al paciente,
+    // así el ALTER TABLE sobre `reservas` (ya poblada) no rompe filas existentes.
+    @Column(columnDefinition = "text")
+    private String observacionesClinicas;
+
     public Reserva() {}
 
     public Reserva(Mascota mascota, Cliente cliente, LocalDateTime fechaHora, Integer duracionMinutos) {
@@ -75,6 +80,13 @@ public class Reserva {
         this.estado = EstadoReserva.PENDIENTE;
     }
 
+    public void registrarObservaciones(String observaciones) {
+        if (this.estado == EstadoReserva.CANCELADO) {
+            throw new IllegalStateException("No se pueden cargar observaciones en un turno cancelado");
+        }
+        this.observacionesClinicas = observaciones;
+    }
+
     public Long getId() { return id; }
     public Mascota getMascota() { return mascota; }
     public Cliente getCliente() { return cliente; }
@@ -82,5 +94,6 @@ public class Reserva {
     public LocalDateTime getFechaHora() { return fechaHora; }
     public EstadoReserva getEstado() { return estado; }
     public Integer getDuracionMinutos() { return duracionMinutos; }
+    public String getObservacionesClinicas() { return observacionesClinicas; }
     public void setVeterinario(Veterinario veterinario) { this.veterinario = veterinario; }
 }
