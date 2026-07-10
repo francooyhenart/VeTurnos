@@ -20,7 +20,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/reservas")
-@CrossOrigin(origins = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.PATCH, RequestMethod.OPTIONS})
+//me tiraba error esto
+//@CrossOrigin(origins = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.PATCH, RequestMethod.OPTIONS})
 public class ReservaController {
 
     private final ReservaService reservaService;
