@@ -110,7 +110,10 @@ const MascotasScreen = ({ navigation, route }) => {
         data={mascotasMostradas}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
-          <ItemMascota mascota={item} onPress={() => {}} />
+            <ItemMascota
+           mascota={item}
+             onPress={() => navigation.navigate('DetalleMascota', { mascota: item })}
+            />
         )}
         contentContainerStyle={estilos.lista}
         ListEmptyComponent={
