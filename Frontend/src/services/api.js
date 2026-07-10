@@ -27,16 +27,21 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ─── Interceptor de respuestas para manejo de errores centralizado ───
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
-      // El servidor respondió con un código de error
-      const message =
-        error.response.data?.error ||
-        error.response.data?.mensaje ||
-        'Ocurrió un error inesperado';
+      const data = error.response.data || {};
+
+      // US-04 AC 02: caso especial, no es un error real sino un pedido de confirmación
+      if (error.response.status === 409 && data.requiereConfirmacion) {
+        const confirmError = new Error(data.advertencia || 'Se requiere confirmación para continuar.');
+        confirmError.requiereConfirmacion = true;
+        confirmError.advertencia = data.advertencia;
+        return Promise.reject(confirmError);
+      }
+
+      const message = data.error || data.mensaje || 'Ocurrió un error inesperado';
       return Promise.reject(new Error(message));
     } else if (error.request) {
       return Promise.reject(new Error('Sin conexión al servidor. Verificá tu red.'));
@@ -141,12 +146,13 @@ export const crearReserva = async (data) => {
 
 /**
  * Cancela una reserva por ID.
- * DELETE /api/reservas/:id
+ * DELETE /api/reservas/:id?confirmarRecargo=true|false
  * @param {number} id
- * @returns {Promise<{ mensaje?: string, advertencia?: string }>}
+ * @param {boolean} confirmarRecargo - true cuando el cliente ya aceptó el recargo por cancelación tardía
+ * @returns {Promise<{ mensaje?: string, advertencia?: string, recargoAplicado?: boolean }>}
  */
-export const cancelarReserva = async (id) => {
-  const response = await api.delete(`/reservas/${id}`);
+export const cancelarReserva = async (id, confirmarRecargo = false) => {
+  const response = await api.delete(`/reservas/${id}`, { params: { confirmarRecargo } });
   return response.data;
 };
 

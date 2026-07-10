@@ -12,13 +12,23 @@ import java.util.List;
 
 public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
-    @Query("SELECT COUNT(r) > 0 FROM Reserva r WHERE r.estado <> :estado " +
+    // Bug de aislamiento corregido: antes esta query comparaba contra TODA la
+    // tabla, así que una cirugía de 2hs del veterinario A bloqueaba también
+    // la agenda del veterinario B a esa misma hora. Ahora, si se recibe un
+    // veterinarioId, el solapamiento se valida ÚNICAMENTE contra los turnos
+    // de ese profesional (LEFT JOIN para no descartar turnos sin vet
+    // asignado de la comparación). Si veterinarioId es null (turno sin
+    // asignar), se mantiene la validación global, como pedía el requerimiento.
+    @Query("SELECT COUNT(r) > 0 FROM Reserva r LEFT JOIN r.veterinario v " +
+            "WHERE r.estado <> :estado " +
             "AND :nuevoInicio < r.fechaHora + (r.duracionMinutos * 1 minute) " +
-            "AND :nuevoFin > r.fechaHora")
+            "AND :nuevoFin > r.fechaHora " +
+            "AND (:veterinarioId IS NULL OR v.id = :veterinarioId)")
     boolean existeSolapamiento(
             @Param("nuevoInicio") LocalDateTime nuevoInicio,
             @Param("nuevoFin") LocalDateTime nuevoFin,
-            @Param("estado") EstadoReserva estado
+            @Param("estado") EstadoReserva estado,
+            @Param("veterinarioId") Long veterinarioId
     );
 
     // Trae los turnos que se superpongan de cualquier manera con el día consultado.

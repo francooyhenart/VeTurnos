@@ -28,6 +28,19 @@ import {
   COLORS, FONT_SIZE, SPACING, BORDER_RADIUS, MOTIVOS, HORARIOS_DISPONIBLES,
 } from '../../constants';
 
+// Punto 1: el cliente autogestionado no puede elegir "Cirugía" como motivo,
+// porque desconoce la duración real del procedimiento (eso queda reservado
+// para que lo cargue el veterinario en CargarTurnoVeterinarioScreen, donde sí
+// se puede definir la duración/cantidad de bloques). Se filtra por texto
+// ("cirug") en vez de por un value fijo para no romper si MOTIVOS cambia de
+// forma (string plano u objeto {label, value}).
+const esMotivoCirugia = (motivo) => {
+  const texto = typeof motivo === 'string' ? motivo : (motivo?.label ?? motivo?.value ?? '');
+  return String(texto).toLowerCase().includes('cirug');
+};
+
+const MOTIVOS_CLIENTE = MOTIVOS.filter((motivo) => !esMotivoCirugia(motivo));
+
 const ReservarTurnoScreen = ({ navigation }) => {
   const { usuario } = useAuth();
 
@@ -241,12 +254,12 @@ const ReservarTurnoScreen = ({ navigation }) => {
               estilo={{ marginBottom: SPACING.sm }}
             />
 
-            {/* Selector de motivo */}
+            {/* Selector de motivo: sin "Cirugía", exclusivo del veterinario */}
             <SelectorCampo
               placeholder="Motivo"
               valor={motivo}
               alCambiar={setMotivo}
-              opciones={MOTIVOS}
+              opciones={MOTIVOS_CLIENTE}
               estilo={{ marginBottom: SPACING.md }}
             />
 
@@ -328,9 +341,6 @@ const ReservarTurnoScreen = ({ navigation }) => {
   );
 };
 
-// ════════════════════════════════════════════
-//  ESTILOS GENERALES ADAPTADOS AL MODO OSCURO
-// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
   safeArea: {
     flex: 1,

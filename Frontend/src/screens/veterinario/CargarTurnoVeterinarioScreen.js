@@ -36,6 +36,15 @@ const esPasado = (horario, fecha) => {
   return turnoFecha <= ahora;
 };
 
+// Punto 2: duración configurable del turno del veterinario, para poder
+// bloquear varios bloques de 30 min consecutivos (ej. una cirugía de 2hs).
+const DURACIONES_TURNO = [
+  { label: '30 min', value: 30 },
+  { label: '60 min (1 hora)', value: 60 },
+  { label: '90 min', value: 90 },
+  { label: '120 min (2 horas)', value: 120 },
+];
+
 const CargarTurnoVeterinarioScreen = ({ navigation }) => {
   const { usuario } = useAuth();
 
@@ -51,6 +60,7 @@ const CargarTurnoVeterinarioScreen = ({ navigation }) => {
 
   // Turno
   const [motivo, setMotivo] = useState('Consulta');
+  const [duracion, setDuracion] = useState(30);
   const [horario, setHorario] = useState('');
   const [fecha, setFecha] = useState(new Date());
   const [horariosDisponibles, setHorariosDisponibles] = useState([]);
@@ -72,9 +82,14 @@ const CargarTurnoVeterinarioScreen = ({ navigation }) => {
       .finally(() => setCargandoSede(false));
   }, [usuario.id]);
 
-  // Al elegir fecha (con la sede ya resuelta), se consulta la disponibilidad
-  // real —mismo endpoint que usa el cliente— y el selector de horario se
-  // puebla solo con lo que queda libre, no con la lista fija completa.
+  // Al elegir fecha o duración (con la sede ya resuelta), se consulta la
+  // disponibilidad real —mismo endpoint que usa el cliente— y el selector de
+  // horario se puebla solo con los inicios que tienen TODOS los bloques de
+  // 30 min necesarios para la duración elegida libres y consecutivos.
+  // Nota: esta reconstrucción por índice asume que HORARIOS_DISPONIBLES es
+  // una grilla contigua de bloques de 30 min sin huecos (ej. sin pausa de
+  // almuerzo en el medio); si la grilla tuviera huecos habría que comparar
+  // por horario real en vez de por índice consecutivo.
   const cargarHorariosDisponibles = useCallback(async () => {
     if (!sedeId) return;
     setCargandoHorarios(true);
@@ -82,7 +97,7 @@ const CargarTurnoVeterinarioScreen = ({ navigation }) => {
       const fechaStr = fecha.toISOString().split('T')[0];
       const reservas = await obtenerDisponibilidad(fechaStr, sedeId);
 
-      const ocupados = [];
+      const ocupados = new Set();
       reservas
         // Solo cuentan como "ocupado" los turnos de la agenda de ESTE
         // veterinario en particular: obtenerDisponibilidad devuelve todos
@@ -92,30 +107,43 @@ const CargarTurnoVeterinarioScreen = ({ navigation }) => {
         .filter((r) => r.estado !== 'CANCELADO' && r.veterinarioId === usuario.id)
         .forEach((r) => {
           const inicio = new Date(r.fechaHora);
-          const duracion = r.duracionMinutos || 30;
-          const fin = new Date(inicio.getTime() + duracion * 60000);
+          const duracionReserva = r.duracionMinutos || 30;
+          const fin = new Date(inicio.getTime() + duracionReserva * 60000);
 
           let tiempoActual = new Date(inicio.getTime());
           while (tiempoActual < fin) {
             const hStr = String(tiempoActual.getHours()).padStart(2, '0');
             const mStr = String(tiempoActual.getMinutes()).padStart(2, '0');
-            ocupados.push(`${hStr}:${mStr}`);
+            ocupados.add(`${hStr}:${mStr}`);
             tiempoActual.setMinutes(tiempoActual.getMinutes() + 30);
           }
         });
 
-      const libres = HORARIOS_DISPONIBLES.filter(
-        (h) => !ocupados.includes(h) && !esPasado(h, fecha)
-      );
+      // Punto 2 (Multibloque): un horario de inicio solo es válido si desde
+      // ahí hay suficientes bloques consecutivos libres para cubrir la
+      // duración elegida, sin salirse de la grilla del día.
+      const bloquesNecesarios = Math.max(1, Math.round(duracion / 30));
+
+      const libres = HORARIOS_DISPONIBLES.filter((horarioInicio, index) => {
+        if (esPasado(horarioInicio, fecha)) return false;
+        if (index + bloquesNecesarios > HORARIOS_DISPONIBLES.length) return false;
+
+        for (let i = 0; i < bloquesNecesarios; i++) {
+          if (ocupados.has(HORARIOS_DISPONIBLES[index + i])) return false;
+        }
+        return true;
+      });
+
       setHorariosDisponibles(libres);
-      // Si el horario que tenía elegido dejó de estar libre, lo deselecciona
+      // Si el horario que tenía elegido dejó de estar libre para la nueva
+      // duración (o cambió la fecha), lo deselecciona.
       setHorario((actual) => (libres.includes(actual) ? actual : ''));
     } catch {
       setHorariosDisponibles([]);
     } finally {
       setCargandoHorarios(false);
     }
-  }, [fecha, sedeId, usuario.id]);
+  }, [fecha, sedeId, usuario.id, duracion]);
 
   useEffect(() => {
     cargarHorariosDisponibles();
@@ -182,6 +210,8 @@ const CargarTurnoVeterinarioScreen = ({ navigation }) => {
         clienteId: mascotaSeleccionada.clienteId,
         mascotaId: mascotaSeleccionada.id,
         fechaHora: isoLocal,
+        // Punto 2: cantidad de bloques de 30' que debe reservar (30/60/90/120).
+        duracionMinutos: duracion,
         // El backend igual fuerza este valor a partir del JWT (ver
         // ReservaController.crearReserva), pero lo mandamos explícitamente
         // para que el payload no dependa silenciosamente de esa sobreescritura.
@@ -279,10 +309,21 @@ const CargarTurnoVeterinarioScreen = ({ navigation }) => {
               estilo={{ marginBottom: SPACING.sm }}
             />
 
+            {/* Punto 2: duración del turno, para reservar múltiples bloques
+                consecutivos (ej. cirugías) sin que se superpongan con otra
+                cita del mismo veterinario. */}
+            <SelectorCampo
+              placeholder="Duración del Turno"
+              valor={duracion}
+              alCambiar={setDuracion}
+              opciones={DURACIONES_TURNO}
+              estilo={{ marginBottom: SPACING.sm }}
+            />
+
             {cargandoHorarios ? (
               <Text style={estilos.buscandoTexto}>Buscando horarios disponibles...</Text>
             ) : horariosDisponibles.length === 0 ? (
-              <Text style={estilos.sinResultados}>No hay horarios disponibles para esta fecha</Text>
+              <Text style={estilos.sinResultados}>No hay horarios disponibles para esta fecha y duración</Text>
             ) : (
               <SelectorCampo
                 placeholder="Horario de Inicio"
