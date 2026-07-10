@@ -28,8 +28,12 @@ export const useMascotas = (clienteId) => {
 
   const agregarMascota = useCallback(async (formData) => {
     const nueva = await registrarMascota({ ...formData, clienteId });
-    setMascotas((prev) => [...prev, nueva]);
-    return nueva;
+    const mascotaConFoto = {
+      ...nueva,
+      foto: nueva?.foto || formData?.foto || null,
+    };
+    setMascotas((prev) => [...prev, mascotaConFoto]);
+    return mascotaConFoto;
   }, [clienteId]);
 
   return { mascotas, cargando, error, cargarMascotas, agregarMascota };

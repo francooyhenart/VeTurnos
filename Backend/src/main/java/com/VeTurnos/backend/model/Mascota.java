@@ -30,6 +30,10 @@ public class Mascota {
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente dueño;
 
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String foto;
+
     public Mascota() {}
 
     public Mascota(String nombre, Especie especie, String raza, Integer edad, Cliente dueño) {
@@ -39,9 +43,6 @@ public class Mascota {
         if (especie == null) {
             throw new IllegalArgumentException("La especie es obligatoria");
         }
-        if (raza == null || raza.trim().isEmpty()) {
-            throw new IllegalArgumentException("La raza es obligatoria");
-        }
         if (edad != null && edad < 0) {
             throw new IllegalArgumentException("La edad no puede ser negativa");
         }
@@ -50,7 +51,7 @@ public class Mascota {
         }
         this.nombre = nombre;
         this.especie = especie;
-        this.raza = raza;
+        this.raza = raza == null ? "" : raza.trim();
         this.edad = edad;
         this.dueño = dueño;
     }
@@ -62,8 +63,13 @@ public class Mascota {
     public String getRaza() { return raza; }
     public Integer getEdad() { return edad; }
     public Cliente getDueño() { return dueño; }
+    public String getFoto() { return foto; }
 
     public void setDueño(Cliente dueño) {
         this.dueño = dueño;
+    }
+
+    public void setFoto(String foto) {
+        this.foto = foto;
     }
 } 

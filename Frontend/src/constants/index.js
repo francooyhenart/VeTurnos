@@ -1,4 +1,5 @@
 // src/constants/index.js
+import { Platform } from 'react-native';
 
 export const COLORS = {
   // Primarios
@@ -84,8 +85,9 @@ export const SHADOWS = {
   },
 };
 
-// Cambiar esta URL por la del servidor backend Java
-export const API_BASE_URL = 'http://localhost:8080/api';
+// Usa una URL accesible desde Expo web y desde el emulador Android
+const HOST_API = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://localhost:8080';
+export const API_BASE_URL = `${HOST_API}/api`;
 
 export const ESPECIES = [
   { label: 'Perro', value: 'PERRO' },

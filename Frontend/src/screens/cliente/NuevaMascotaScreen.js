@@ -7,7 +7,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  TouchableOpacity,
+  Image,
+  Alert,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../context/AuthContext';
 import { useMascotas } from '../../hooks/index';
 import {
@@ -32,6 +36,7 @@ const NuevaMascotaScreen = ({ navigation }) => {
   const [errores, setErrores] = useState({});
   const [errorGeneral, setErrorGeneral] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [foto, setFoto] = useState(null);
 
   const actualizar = (campo) => (valor) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
@@ -46,19 +51,83 @@ const NuevaMascotaScreen = ({ navigation }) => {
     return Object.keys(nuevos).length === 0;
   };
 
+  const seleccionarFoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Necesitás permitir el acceso a la galería para seleccionar una foto.');
+      return;
+    }
+
+    const resultado = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.15,
+      base64: true,
+    });
+
+    if (!resultado.canceled) {
+      const asset = resultado.assets[0];
+      setFoto({
+        uri: asset.uri,
+        base64: asset.base64,
+        mimeType: asset.mimeType || 'image/jpeg',
+      });
+    }
+  };
+
+  const tomarFoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Necesitás permitir el acceso a la cámara para tomar una foto.');
+      return;
+    }
+
+    const resultado = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.15,
+      base64: true,
+    });
+
+    if (!resultado.canceled) {
+      const asset = resultado.assets[0];
+      setFoto({
+        uri: asset.uri,
+        base64: asset.base64,
+        mimeType: asset.mimeType || 'image/jpeg',
+      });
+    }
+  };
+
   const manejarGuardar = async () => {
     setErrorGeneral('');
     if (!validar()) return;
 
     setCargando(true);
     try {
-      await agregarMascota({
+      const payload = {
         nombre: form.nombre.trim(),
         especie: form.especie,
-        raza: form.raza.trim() || null,
+        raza: form.raza.trim() || '',
         edad: form.edad ? parseInt(form.edad, 10) : null,
+      };
+
+      const fotoBase64 = foto?.base64?.trim();
+      const fotoParaEnviar = fotoBase64 && fotoBase64.length < 400000
+        ? `data:${foto.mimeType || 'image/jpeg'};base64,${fotoBase64}`
+        : null;
+
+      const mascotaCreada = fotoParaEnviar
+        ? await agregarMascota({ ...payload, foto: fotoParaEnviar })
+        : await agregarMascota(payload);
+
+      navigation.navigate('ListaMascotas', {
+        mascotaCreada: {
+          ...mascotaCreada,
+          foto: fotoParaEnviar || foto?.uri || null,
+        },
       });
-      navigation.goBack();
     } catch (e) {
       setErrorGeneral(e.message || 'Error al guardar la mascota.');
     } finally {
@@ -107,6 +176,25 @@ const NuevaMascotaScreen = ({ navigation }) => {
               teclado="numeric"
             />
 
+            <View style={estilos.seccionFoto}>
+              <Text style={estilos.labelFoto}>Foto de la mascota</Text>
+              {foto ? (
+                <Image source={{ uri: foto.uri || foto }} style={estilos.previewFoto} />
+              ) : (
+                <View style={estilos.previewVacio}>
+                  <Text style={estilos.previewVacioTexto}>Sin foto seleccionada</Text>
+                </View>
+              )}
+              <View style={estilos.botonesFoto}>
+                <TouchableOpacity style={estilos.botonFoto} onPress={seleccionarFoto}>
+                  <Text style={estilos.botonFotoTexto}>Galería</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={estilos.botonFoto} onPress={tomarFoto}>
+                  <Text style={estilos.botonFotoTexto}>Cámara</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
             {!!errorGeneral && <AlertaError mensaje={errorGeneral} />}
 
             {/* 🚀 BOTÓN GUARDAR VERDE PASTEL DEL FIGMA */}
@@ -152,6 +240,51 @@ const estilos = StyleSheet.create({
   botonGuardar: {
     backgroundColor: '#90C7A1', // 🎨 Botón Verde Pastel del Figma
     marginTop: SPACING.lg,
+  },
+  seccionFoto: {
+    marginTop: SPACING.sm,
+    padding: SPACING.md,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    gap: SPACING.sm,
+  },
+  labelFoto: {
+    fontSize: FONT_SIZE.md,
+    fontWeight: '600',
+    color: '#143343',
+  },
+  previewFoto: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    backgroundColor: '#E8F0F2',
+  },
+  previewVacio: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    backgroundColor: '#E8F0F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewVacioTexto: {
+    color: '#6B7A80',
+    fontSize: FONT_SIZE.sm,
+  },
+  botonesFoto: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  botonFoto: {
+    flex: 1,
+    paddingVertical: SPACING.sm,
+    borderRadius: 10,
+    backgroundColor: '#143343',
+    alignItems: 'center',
+  },
+  botonFotoTexto: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });
 
