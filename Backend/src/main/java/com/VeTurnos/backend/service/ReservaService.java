@@ -14,6 +14,7 @@ import com.VeTurnos.backend.repository.ClienteRepository;
 import com.VeTurnos.backend.repository.MascotaRepository;
 import com.VeTurnos.backend.repository.ReservaRepository;
 import com.VeTurnos.backend.repository.VeterinarioRepository;
+import com.VeTurnos.backend.service.RecargoConfirmacionRequeridaException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,10 +46,20 @@ public class ReservaService {
         int duracion = request.getDuracionMinutos() != null ? request.getDuracionMinutos() : 30;
         LocalDateTime fechaHoraFin = request.getFechaHora().plusMinutes(duracion);
 
-        // 2. Validar solapamiento de rangos en la agenda
-        boolean seSolapa = reservaRepository.existeSolapamiento(request.getFechaHora(), fechaHoraFin, EstadoReserva.CANCELADO);
+        // 2. Validar solapamiento de rangos en la agenda.
+        // Aislado por veterinarioId: si el turno tiene un profesional asignado
+        // (ej. el vet cargando una cirugía multibloque), el choque de horarios
+        // solo se evalúa contra SU propia agenda, para no bloquear la agenda
+        // de otro veterinario que trabaja en paralelo. Si no viene
+        // veterinarioId (turno sin asignar todavía), se mantiene la
+        // validación global.
+        boolean seSolapa = reservaRepository.existeSolapamiento(
+                request.getFechaHora(), fechaHoraFin, EstadoReserva.CANCELADO, request.getVeterinarioId());
         if (seSolapa) {
-            throw new IllegalArgumentException("El rango horario seleccionado se solapa con un turno existente");
+            String mensajeSolapamiento = request.getVeterinarioId() != null
+                    ? "El rango horario seleccionado se solapa con otro turno en la agenda de ese veterinario"
+                    : "El rango horario seleccionado se solapa con un turno existente";
+            throw new IllegalArgumentException(mensajeSolapamiento);
         }
 
         // 3. Buscar Entidades
@@ -76,18 +87,31 @@ public class ReservaService {
     }
 
     @Transactional(noRollbackFor = IllegalStateException.class)
-    public void cancelarReserva(Long id) {
+    public void cancelarReserva(Long id, boolean confirmarRecargo) {
         Reserva reserva = reservaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("La reserva no existe"));
 
+        if (reserva.getEstado() == EstadoReserva.CANCELADO) {
+            throw new IllegalArgumentException("La reserva ya se encuentra cancelada");
+        }
+
         boolean requiereRecargo = reserva.requiereRecargoPorCancelacion();
 
-        // Al ser una sola fila, esto cancela el bloque completo de una
+        // AC 02: si está en ventana de recargo y el cliente todavía no confirmó,
+        // cortamos ACÁ. Todavía no se tocó la base de datos.
+        if (requiereRecargo && !confirmarRecargo) {
+            throw new RecargoConfirmacionRequeridaException(
+                    "Esta cancelación se considera tardía (faltan menos de 24hs) y aplicará un recargo. ¿Deseás continuar?"
+            );
+        }
+
+        // Recién acá persistimos: o no requería recargo, o el cliente ya confirmó
         reserva.cancelar();
         reservaRepository.save(reserva);
 
         if (requiereRecargo) {
-            throw new IllegalStateException("Se cobrará un recargo por cancelación tardía debido a que faltan menos de 24 horas para la consulta");
+            // Ya fue confirmado; avisamos igual que se aplicó el recargo (para el toast)
+            throw new IllegalStateException("La reserva fue cancelada. Se aplicará un recargo por cancelación tardía.");
         }
     }
 
