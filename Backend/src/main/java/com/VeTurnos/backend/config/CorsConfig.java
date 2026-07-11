@@ -1,4 +1,4 @@
-package com.VeTurnos.backend.config;
+package com.veturnos.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

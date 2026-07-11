@@ -1,6 +1,6 @@
-package com.VeTurnos.backend.config;
+package com.veturnos.backend.config;
 
-import com.VeTurnos.backend.service.JwtTokenProvider;
+import com.veturnos.backend.service.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

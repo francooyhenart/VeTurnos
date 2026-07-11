@@ -1,6 +1,6 @@
-package com.VeTurnos.backend.config;
+package com.veturnos.backend.config;
 
-import com.VeTurnos.backend.service.JwtTokenProvider;
+import com.veturnos.backend.service.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
