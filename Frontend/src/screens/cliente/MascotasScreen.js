@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useMascotas } from '../../hooks/index';
@@ -17,36 +18,72 @@ import {
 } from '../../components/ui';
 import { COLORS, FONT_SIZE, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants';
 
-const ItemMascota = ({ mascota, onPress }) => (
-  /* 🚀 Ahora que corregimos la Tarjeta, este estilo verde va a pisar al blanco base */
-  <Tarjeta onPress={onPress} estilo={estilos.itemMascota}>
-    <View style={estilos.itemMascotaContenido}>
-      <View style={estilos.iconoMascota}>
-        <Text style={estilos.iconoMascotaTexto}>
-          {mascota.especie === 'PERRO' ? '🐶' :
-           mascota.especie === 'GATO' ? '🐱' :
-           mascota.especie === 'AVE' ? '🐦' : '🐾'}
-        </Text>
-      </View>
-      <View style={estilos.infoMascota}>
-        <Text style={estilos.nombreMascota}>{mascota.nombre}</Text>
-        <Text style={estilos.detalleMascota}>
-          {mascota.especie.charAt(0) + mascota.especie.slice(1).toLowerCase()}
-          {mascota.raza ? ` - ${mascota.raza}` : ''}
-        </Text>
-      </View>
-    </View>
-  </Tarjeta>
-);
+const obtenerFotoMascota = (foto) => {
+  if (!foto) return null;
+  if (typeof foto !== 'string') return null;
+  if (foto.startsWith('data:') || foto.startsWith('file:') || foto.startsWith('http')) {
+    return foto;
+  }
+  if (foto.startsWith('iVBORw0KGgo') || foto.includes('base64,')) {
+    return foto;
+  }
+  return `data:image/jpeg;base64,${foto}`;
+};
 
-const MascotasScreen = ({ navigation }) => {
+const ItemMascota = ({ mascota, onPress }) => {
+  const fotoUri = obtenerFotoMascota(mascota.foto);
+
+  return (
+    <Tarjeta onPress={onPress} estilo={estilos.itemMascota}>
+      <View style={estilos.itemMascotaContenido}>
+        {fotoUri ? (
+          <Image source={{ uri: fotoUri }} style={estilos.fotoMascota} />
+        ) : (
+          <View style={estilos.iconoMascota}>
+            <Text style={estilos.iconoMascotaTexto}>
+              {mascota.especie === 'PERRO' ? '🐶' :
+               mascota.especie === 'GATO' ? '🐱' :
+               mascota.especie === 'AVE' ? '🐦' : '🐾'}
+            </Text>
+          </View>
+        )}
+        <View style={estilos.infoMascota}>
+          <Text style={estilos.nombreMascota}>{mascota.nombre}</Text>
+          <Text style={estilos.detalleMascota}>
+            {mascota.especie.charAt(0) + mascota.especie.slice(1).toLowerCase()}
+            {mascota.raza ? ` - ${mascota.raza}` : ''}
+          </Text>
+        </View>
+      </View>
+    </Tarjeta>
+  );
+};
+
+const MascotasScreen = ({ navigation, route }) => {
   const { usuario } = useAuth();
   const { mascotas, cargando, error, cargarMascotas } = useMascotas(usuario?.id);
+  const [mascotasLocal, setMascotasLocal] = useState([]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', cargarMascotas);
     return unsubscribe;
   }, [navigation, cargarMascotas]);
+
+  useEffect(() => {
+    if (route?.params?.mascotaCreada) {
+      const nuevaMascota = {
+        ...route.params.mascotaCreada,
+        id: route.params.mascotaCreada.id ?? `local-${Date.now()}`,
+      };
+      setMascotasLocal((prev) => [nuevaMascota, ...prev]);
+      navigation.setParams({ mascotaCreada: undefined });
+    }
+  }, [route?.params?.mascotaCreada, navigation]);
+
+  const mascotasMostradas = useMemo(() => {
+    if (!mascotasLocal.length) return mascotas;
+    return [ ...mascotasLocal, ...mascotas ];
+  }, [mascotas, mascotasLocal]);
 
   if (cargando) return <CargandoPantalla oscuro />;
 
@@ -70,10 +107,13 @@ const MascotasScreen = ({ navigation }) => {
       {error && <AlertaError mensaje={error} estilo={{ margin: SPACING.md }} />}
 
       <FlatList
-        data={mascotas}
+        data={mascotasMostradas}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
-          <ItemMascota mascota={item} onPress={() => {}} />
+            <ItemMascota
+           mascota={item}
+             onPress={() => navigation.navigate('DetalleMascota', { mascota: item })}
+            />
         )}
         contentContainerStyle={estilos.lista}
         ListEmptyComponent={
@@ -143,6 +183,12 @@ const estilos = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
+  },
+  fotoMascota: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#FFFFFF',
   },
   iconoMascota: {
     width: 52,

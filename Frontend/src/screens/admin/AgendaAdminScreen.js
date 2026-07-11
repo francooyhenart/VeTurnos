@@ -51,6 +51,8 @@ const ItemAgendaVet = ({ reserva, onMarcar, actualizando, onAbrirFicha }) => {
   const completado = reserva.estado === 'COMPLETADO';
   const cancelado = reserva.estado === 'CANCELADO';
 
+  const turnoAunNoComienza = !asistido && new Date(reserva.fechaHora) > new Date();
+
   return (
     <View style={estilos.itemTurno}>
       <View style={estilos.filaPrincipal}>
@@ -60,6 +62,9 @@ const ItemAgendaVet = ({ reserva, onMarcar, actualizando, onAbrirFicha }) => {
           </Text>
           <Text style={estilos.itemNombre}>Cliente: {reserva.nombreCliente}</Text>
           <Text style={estilos.itemMascota}>Paciente: {reserva.nombreMascota}</Text>
+          {turnoAunNoComienza && (
+             <Text style={estilos.avisoHorario}>Disponible al comenzar el turno</Text>
+          )}
         </View>
 
         {completado ? (
@@ -68,10 +73,20 @@ const ItemAgendaVet = ({ reserva, onMarcar, actualizando, onAbrirFicha }) => {
           </View>
         ) : (
           <TouchableOpacity
-            style={[estilos.checkBoton, asistido && estilos.checkBotonActivo]}
-            onPress={() => onMarcar(reserva)}
+          style={[
+            estilos.checkBoton,
+            asistido && estilos.checkBotonActivo,
+            turnoAunNoComienza && estilos.checkBotonDeshabilitado,
+          ]}
+            onPress={() => onMarcar(reserva, turnoAunNoComienza)}
             disabled={actualizando}
-            accessibilityLabel={asistido ? 'Desconfirmar asistencia' : 'Confirmar asistencia'}
+          accessibilityLabel={
+            asistido
+                ? 'Desconfirmar asistencia'
+                : turnoAunNoComienza
+                ? 'Aún no se puede confirmar asistencia'
+                : 'Confirmar asistencia'
+          }
             accessibilityRole="button"
           >
             {actualizando ? (
@@ -165,8 +180,15 @@ const AgendaAdminScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation, cargarAgenda]);
 
-  const manejarMarcar = async (reserva) => {
+  const manejarMarcar = async (reserva, bloqueadoPorHorario = false) => {
     if (actualizandoIds[reserva.id]) return; // evita doble tap mientras hay una petición en curso
+
+    // (Reserva.marcarComoAsistido) sigue siendo la validación real — esto es
+    // solo UX, por si el reloj del dispositivo está desfasado del servidor.
+    if (bloqueadoPorHorario) {
+      setError('No se puede marcar como asistido un turno antes de su fecha y hora de inicio.');
+      return;
+    }
 
     // Alterna entre PENDIENTE y ASISTIDO; COMPLETADO es un estado final
     const nuevoEstado = reserva.estado === 'ASISTIDO' ? 'PENDIENTE' : 'ASISTIDO';
@@ -474,6 +496,15 @@ const estilos = StyleSheet.create({
   checkBotonCompletado: {
     backgroundColor: '#A3E1FC',
     borderColor: '#A3E1FC',
+  },
+  checkBotonDeshabilitado: {
+    opacity: 0.4,
+  },
+  avisoHorario: {
+  fontSize: FONT_SIZE.sm - 1,
+    color: '#B45309',
+    marginTop: 2,
+    fontStyle: 'italic',
   },
   estadoBadge: {
     paddingHorizontal: 10,

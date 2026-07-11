@@ -76,7 +76,7 @@ public class AuthService {
 
         // Validación en texto plano para el MVP
         if (!usuario.getPassword().equals(request.getPassword())) {
-            throw new IllegalArgumentException("Credenciales incorrectas");
+            throw new IllegalArgumentException("Mail o Contraseña incorrectas");
         }
 
         // Generar token JWT

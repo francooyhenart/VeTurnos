@@ -20,13 +20,11 @@ import { COLORS, FONT_SIZE, SPACING, BORDER_RADIUS } from '../../constants';
 // Proyecta el rango horario dinámicamente usando la duración que envía el DTO
 const formatearFechaHoraRango = (fechaHoraStr, duracionMinutos = 30) => {
   if (!fechaHoraStr) return '';
-  
   const inicio = new Date(fechaHoraStr);
   const fin = new Date(inicio.getTime() + (duracionMinutos || 30) * 60000);
 
   const dia = inicio.getDate();
   const mes = inicio.toLocaleString('es-AR', { month: 'short' });
-  
   const horaInicio = inicio.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
   const horaFin = fin.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 
@@ -35,10 +33,11 @@ const formatearFechaHoraRango = (fechaHoraStr, duracionMinutos = 30) => {
 
 const badgeColor = (estado) => {
   switch (estado) {
-    case 'PENDIENTE': return '#0284C7'; // Un celeste prolijo para combinar
+    case 'PENDIENTE': return '#0284C7';
     case 'ASISTIDO': return COLORS.success;
     case 'COMPLETADO': return COLORS.primary;
     case 'CANCELADO': return COLORS.textMuted;
+    case 'AUSENTE': return '#B45309';
     default: return COLORS.textMuted;
   }
 };
@@ -49,28 +48,24 @@ const badgeLabel = (estado) => {
     case 'ASISTIDO': return 'Asistido';
     case 'COMPLETADO': return 'Completado';
     case 'CANCELADO': return 'Cancelado';
+    case 'AUSENTE': return 'Ausente';
     default: return estado;
   }
 };
 
-// 🚀 COMPONENTE TOTALMENTE CORREGIDO Y ALINEADO HORIZONTALMENTE
 const ItemTurno = ({ turno, onCancelar }) => (
   <View style={estilos.itemTurno}>
-    {/* Contenedor Izquierdo: Textos e info compacta */}
     <View style={estilos.infoContenedor}>
       <Text style={estilos.nombreMascota}>{turno.nombreMascota}</Text>
-      
       <Text style={estilos.fechaTexto}>
         {formatearFechaHoraRango(turno.fechaHora, turno.duracionMinutos)}
         {turno.motivo ? ` - ${turno.motivo}` : ''}
       </Text>
-      
       <Text style={[estilos.estadoTexto, { color: badgeColor(turno.estado) }]}>
         {badgeLabel(turno.estado)}
       </Text>
     </View>
 
-    {/* Contenedor Derecho: Tacho de basura más grande al costado */}
     {turno.estado === 'PENDIENTE' && (
       <TouchableOpacity
         onPress={() => onCancelar(turno)}
@@ -84,9 +79,7 @@ const ItemTurno = ({ turno, onCancelar }) => (
   </View>
 );
 
-// Punto 3: "Próximos" = PENDIENTE; "Historial" = lo que ya pasó (asistido,
-// completado o cancelado)
-const ESTADOS_HISTORIAL = ['ASISTIDO', 'COMPLETADO', 'CANCELADO'];
+const ESTADOS_HISTORIAL = ['ASISTIDO', 'COMPLETADO', 'CANCELADO', 'AUSENTE'];
 
 const TurnosScreen = ({ navigation }) => {
   const { usuario } = useAuth();
@@ -94,9 +87,15 @@ const TurnosScreen = ({ navigation }) => {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
   const [advertencia, setAdvertencia] = useState('');
-  const [turnoAcancelar, setTurnoACancelar] = useState(null);
-  const [cancelando, setCancelando] = useState(false);
   const [vista, setVista] = useState('proximos');
+
+  // Paso 1: modal clásico de "¿cancelar este turno?"
+  const [turnoAcancelar, setTurnoACancelar] = useState(null);
+  // Paso 2: modal de "esto tiene recargo, ¿confirmás?" (AC 02)
+  const [turnoConRecargo, setTurnoConRecargo] = useState(null);
+  const [mensajeRecargo, setMensajeRecargo] = useState('');
+
+  const [cancelando, setCancelando] = useState(false);
 
   const cargarTurnos = useCallback(async () => {
     if (!usuario?.nombreCompleto) return;
@@ -118,22 +117,54 @@ const TurnosScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation, cargarTurnos]);
 
+  // Paso 1: intento de cancelación "normal" (sin confirmar recargo todavía)
   const confirmarCancelacion = async () => {
     if (!turnoAcancelar) return;
+    const turno = turnoAcancelar;
     setCancelando(true);
     try {
-      const res = await cancelarReserva(turnoAcancelar.id);
+      const res = await cancelarReserva(turno.id, false);
+      // No requería recargo: se canceló directo
       setTurnoACancelar(null);
-      if (res?.advertencia) {
-        setAdvertencia(res.advertencia);
-      }
+      if (res?.advertencia) setAdvertencia(res.advertencia);
       await cargarTurnos();
     } catch (e) {
-      setError(e.message || 'Error al cancelar el turno.');
-      setTurnoACancelar(null);
+      if (e.requiereConfirmacion) {
+        // AC 02: todavía NO se tocó la base. Pasamos al modal de recargo.
+        setTurnoACancelar(null);
+        setMensajeRecargo(e.advertencia);
+        setTurnoConRecargo(turno);
+      } else {
+        setError(e.message || 'Error al cancelar el turno.');
+        setTurnoACancelar(null);
+      }
     } finally {
       setCancelando(false);
     }
+  };
+
+  // Paso 2: el cliente ya vio el aviso de recargo y decidió continuar
+  const confirmarCancelacionConRecargo = async () => {
+    if (!turnoConRecargo) return;
+    setCancelando(true);
+    try {
+      const res = await cancelarReserva(turnoConRecargo.id, true);
+      setTurnoConRecargo(null);
+      setMensajeRecargo('');
+      if (res?.advertencia) setAdvertencia(res.advertencia);
+      await cargarTurnos();
+    } catch (e) {
+      setError(e.message || 'Error al cancelar el turno.');
+      setTurnoConRecargo(null);
+      setMensajeRecargo('');
+    } finally {
+      setCancelando(false);
+    }
+  };
+
+  const cancelarFlujoRecargo = () => {
+    setTurnoConRecargo(null);
+    setMensajeRecargo('');
   };
 
   const turnosFiltrados = turnos.filter((t) =>
@@ -146,7 +177,6 @@ const TurnosScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={estilos.safeArea}>
-      {/* Encabezado */}
       <View style={estilos.encabezado}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -161,7 +191,6 @@ const TurnosScreen = ({ navigation }) => {
         <Text style={estilos.titulo}>Mis turnos</Text>
       </View>
 
-      {/* Punto 3: segmented control Próximos / Historial */}
       <View style={estilos.segmentado}>
         <TouchableOpacity
           style={[estilos.segmentoBoton, vista === 'proximos' && estilos.segmentoBotonActivo]}
@@ -209,6 +238,7 @@ const TurnosScreen = ({ navigation }) => {
         }
       />
 
+      {/* Paso 1: confirmación clásica */}
       <ModalConfirmacion
         visible={!!turnoAcancelar}
         titulo="¿Cancelar este turno?"
@@ -216,17 +246,23 @@ const TurnosScreen = ({ navigation }) => {
         onConfirmar={confirmarCancelacion}
         onCancelar={() => setTurnoACancelar(null)}
       />
+
+      {/* Paso 2 (AC 02): confirmación de recargo por cancelación tardía */}
+      <ModalConfirmacion
+        visible={!!turnoConRecargo}
+        titulo="Cancelación tardía"
+        descripcion={mensajeRecargo || 'Esta cancelación se considera tardía y aplicará un recargo. ¿Deseás continuar?'}
+        onConfirmar={confirmarCancelacionConRecargo}
+        onCancelar={cancelarFlujoRecargo}
+      />
     </SafeAreaView>
   );
 };
 
-// ════════════════════════════════════════════
-//  ESTILOS TOTALMENTE RESTRUCTURADOS Y LIMPIOS
-// ════════════════════════════════════════════
 const estilos = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#143343', // Fondo Azul Petróleo
+    backgroundColor: '#143343',
   },
   encabezado: {
     paddingHorizontal: SPACING.md,
@@ -240,11 +276,11 @@ const estilos = StyleSheet.create({
   },
   flechaTexto: {
     fontSize: FONT_SIZE.xl,
-    color: '#FFFFFF', // Flecha de volver blanca
+    color: '#FFFFFF',
   },
   tituloContenedor: {
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md, 
+    paddingVertical: SPACING.md,
   },
   titulo: {
     fontSize: FONT_SIZE.xxl,
@@ -283,28 +319,27 @@ const estilos = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.xl,
   },
-  // 🚀 TARJETA SUPER FLACA CON ALINEACIÓN HORIZONTAL (ESTILO FIGMA)
   itemTurno: {
-    backgroundColor: '#E3E3E3', 
+    backgroundColor: '#E3E3E3',
     borderRadius: 12,
-    paddingVertical: 10,           // 👈 Ultra flaco arriba y abajo
-    paddingHorizontal: SPACING.md,  
-    marginVertical: 4,              
-    flexDirection: 'row',          // Info a la izquierda, tacho a la derecha
-    alignItems: 'center',          
+    paddingVertical: 10,
+    paddingHorizontal: SPACING.md,
+    marginVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
   },
   infoContenedor: {
-    flex: 1,                       // Toma todo el ancho disponible empujando el tacho al final
+    flex: 1,
     paddingRight: SPACING.sm,
   },
   nombreMascota: {
     fontSize: FONT_SIZE.md,
     fontWeight: '700',
-    color: '#143343', 
+    color: '#143343',
   },
   fechaTexto: {
-    fontSize: FONT_SIZE.sm - 1,   // Un punto menos de tamaño para ganar espacio vertical
+    fontSize: FONT_SIZE.sm - 1,
     color: '#1F1F1F',
     marginTop: 2,
   },
@@ -313,15 +348,14 @@ const estilos = StyleSheet.create({
     fontWeight: '700',
     marginTop: 2,
   },
-  // 🚀 BOTÓN ELIMINAR CON EL TACHO GRANDE AL COSTADO
   botonEliminar: {
-    minWidth: 44,                 
+    minWidth: 44,
     minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tachoIcono: {
-    fontSize: 22,                 // 👈 Tacho más grande y accesible en web
+    fontSize: 22,
     color: '#EF4444',
   },
   alertaAdvertencia: {

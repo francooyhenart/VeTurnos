@@ -18,6 +18,7 @@ import RegistroScreen from '../screens/auth/RegistroScreen';
 import InicioClienteScreen from '../screens/cliente/InicioClienteScreen';
 import MascotasScreen from '../screens/cliente/MascotasScreen';
 import NuevaMascotaScreen from '../screens/cliente/NuevaMascotaScreen';
+import DetalleMascotaScreen from '../screens/cliente/DetalleMascotaScreen';
 import TurnosScreen from '../screens/cliente/TurnosScreen';
 import ReservarTurnoScreen from '../screens/cliente/ReservarTurnoScreen';
 import PerfilModal from '../screens/cliente/PerfilModal';
@@ -105,6 +106,7 @@ const MascotasStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="ListaMascotas" component={MascotasScreen} />
     <Stack.Screen name="NuevaMascota" component={NuevaMascotaScreen} />
+    <Stack.Screen name="DetalleMascota" component={DetalleMascotaScreen} />
   </Stack.Navigator>
 );
 

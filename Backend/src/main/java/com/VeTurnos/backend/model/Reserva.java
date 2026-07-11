@@ -56,6 +56,10 @@ public class Reserva {
 
     public void marcarComoAsistido() {
         if (this.estado == EstadoReserva.CANCELADO) throw new IllegalStateException("No se puede marcar como asistido un turno cancelado");
+        if (this.estado == EstadoReserva.AUSENTE) throw new IllegalStateException("No se puede marcar como asistido un turno que ya fue registrado como ausente");
+        if (LocalDateTime.now().isBefore(this.fechaHora)) {
+            throw new IllegalStateException("No se puede marcar como asistido un turno antes de su fecha y hora de inicio");
+        }
         this.estado = EstadoReserva.ASISTIDO;
     }
 
@@ -78,6 +82,19 @@ public class Reserva {
         if (this.estado == EstadoReserva.COMPLETADO) throw new IllegalStateException("No se puede desconfirmar un turno ya completado");
         if (this.estado == EstadoReserva.CANCELADO) throw new IllegalStateException("No se puede modificar un turno cancelado");
         this.estado = EstadoReserva.PENDIENTE;
+    }
+
+    // Usado por el job automático (ver ReservaService.marcarAusentesAutomaticamente).
+    // Solo se marcan como AUSENTE los turnos que seguían PENDIENTE cuando ya
+    // pasó su horario — un turno ASISTIDO/COMPLETADO/CANCELADO no se toca.
+    public void marcarComoAusente() {
+        if (this.estado != EstadoReserva.PENDIENTE) {
+            throw new IllegalStateException("Solo se pueden marcar como ausentes los turnos que seguían pendientes");
+        }
+        if (LocalDateTime.now().isBefore(this.fechaHora)) {
+            throw new IllegalStateException("No se puede marcar como ausente un turno que todavía no comenzó");
+        }
+        this.estado = EstadoReserva.AUSENTE;
     }
 
     public void registrarObservaciones(String observaciones) {

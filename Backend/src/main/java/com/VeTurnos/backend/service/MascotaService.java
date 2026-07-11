@@ -38,14 +38,21 @@ public class MascotaService {
             throw new IllegalArgumentException("La especie especificada no es válida");
         }
 
+        String raza = request.getRaza() == null ? "" : request.getRaza().trim();
+
         // 3. Crear la entidad de dominio pasándole el dueño (JPA se encarga de la FK)
         Mascota nuevaMascota = new Mascota(
                 request.getNombre(),
                 especieEnum,
-                request.getRaza(),
+                raza,
                 request.getEdad(), // Puede ir null sin problemas
                 dueño
         );
+        String foto = request.getFoto() == null ? null : request.getFoto().trim();
+        if (foto != null && foto.length() > 400000) {
+            foto = null;
+        }
+        nuevaMascota.setFoto(foto == null || foto.isEmpty() ? null : foto);
 
         // 4. Guardar en la base de datos
         Mascota mascotaGuardada = mascotaRepository.save(nuevaMascota);
@@ -88,6 +95,7 @@ public class MascotaService {
                 mascota.getRaza(),
                 mascota.getEdad(),
                 mascota.getDueño().getId(),
+                mascota.getFoto(),
                 mascota.getDueño().getNombreCompleto(),
                 mascota.getDueño().getDni()
         );

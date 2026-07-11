@@ -6,6 +6,7 @@ import com.VeTurnos.backend.dto.ObservacionesClinicasRequest;
 import com.VeTurnos.backend.dto.HistorialClinicoResponse;
 import com.VeTurnos.backend.service.ReservaService;
 import com.VeTurnos.backend.service.JwtTokenProvider;
+import com.VeTurnos.backend.service.RecargoConfirmacionRequeridaException;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -19,7 +20,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/reservas")
-@CrossOrigin(origins = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.PATCH, RequestMethod.OPTIONS})
+//me tiraba error esto
+//@CrossOrigin(origins = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.PATCH, RequestMethod.OPTIONS})
 public class ReservaController {
 
     private final ReservaService reservaService;
@@ -58,21 +60,35 @@ public class ReservaController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> cancelar(@PathVariable Long id) {
+    public ResponseEntity<?> cancelar(
+            @PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "false") boolean confirmarRecargo) {
         try {
-            reservaService.cancelarReserva(id);
-            Map<String, String> okResponse = new HashMap<>();
+            reservaService.cancelarReserva(id, confirmarRecargo);
+            Map<String, Object> okResponse = new HashMap<>();
             okResponse.put("mensaje", "La reserva fue cancelada con éxito y el horario quedó liberado");
+            okResponse.put("recargoAplicado", false);
             return new ResponseEntity<>(okResponse, HttpStatus.OK);
+
+        } catch (RecargoConfirmacionRequeridaException e) {
+            // AC 02: nada se canceló todavía. El front debe volver a pedir con confirmarRecargo=true
+            Map<String, Object> confirmResponse = new HashMap<>();
+            confirmResponse.put("requiereConfirmacion", true);
+            confirmResponse.put("advertencia", e.getMessage());
+            return new ResponseEntity<>(confirmResponse, HttpStatus.CONFLICT); // 409
+
         } catch (IllegalStateException e) {
-            // Cancelación tardía: Se procesó la baja pero avisa el recargo (US-04 AC 02)
-            Map<String, String> warningResponse = new HashMap<>();
+            // Recargo ya confirmado y aplicado: la baja SÍ se guardó
+            Map<String, Object> warningResponse = new HashMap<>();
             warningResponse.put("advertencia", e.getMessage());
+            warningResponse.put("recargoAplicado", true);
             return new ResponseEntity<>(warningResponse, HttpStatus.OK);
+
         } catch (IllegalArgumentException e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", e.getMessage());
             return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+
         } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "Ocurrió un error inesperado al cancelar la reserva");
