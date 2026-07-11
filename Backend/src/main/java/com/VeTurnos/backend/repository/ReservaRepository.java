@@ -78,6 +78,8 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
             Long veterinarioId, EstadoReserva estado, LocalDateTime ahora
     );
 
+    List<Reserva> findByEstadoAndFechaHoraBefore(EstadoReserva estado, LocalDateTime ahora);
+
     // Punto 4: usado por SedeService para no permitir borrar una sede con turnos asignados
     // (vía Veterinario -> Sede; el path navega con inner join implícito, que es lo correcto acá)
     @Query("SELECT COUNT(r) > 0 FROM Reserva r WHERE r.veterinario.sede.id = :sedeId")

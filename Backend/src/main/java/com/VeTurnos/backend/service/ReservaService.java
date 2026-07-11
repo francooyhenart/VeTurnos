@@ -17,6 +17,9 @@ import com.VeTurnos.backend.repository.VeterinarioRepository;
 import com.VeTurnos.backend.service.RecargoConfirmacionRequeridaException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,6 +30,7 @@ import java.util.stream.Collectors;
 @Service
 public class ReservaService {
 
+    private static final Logger log = LoggerFactory.getLogger(ReservaService.class);
     private final ReservaRepository reservaRepository;
     private final ClienteRepository clienteRepository;
     private final MascotaRepository mascotaRepository;
@@ -113,6 +117,29 @@ public class ReservaService {
             // Ya fue confirmado; avisamos igual que se aplicó el recargo (para el toast)
             throw new IllegalStateException("La reserva fue cancelada. Se aplicará un recargo por cancelación tardía.");
         }
+    }
+
+    /**
+     * Funcionalidad 1: cada 15 minutos, revisa los turnos que seguían
+     * PENDIENTE con la hora de atención ya vencida y los pasa a AUSENTE.
+     * No toca turnos ASISTIDO/COMPLETADO/CANCELADO.
+     */
+    @Scheduled(cron = "0 */15 * * * *")
+    @Transactional
+    public void marcarAusentesAutomaticamente() {
+        List<Reserva> vencidos = reservaRepository.findByEstadoAndFechaHoraBefore(
+                EstadoReserva.PENDIENTE, LocalDateTime.now());
+
+        if (vencidos.isEmpty()) {
+            return;
+        }
+
+        for (Reserva reserva : vencidos) {
+            reserva.marcarComoAusente();
+        }
+        reservaRepository.saveAll(vencidos);
+
+        log.info("Se marcaron {} turno(s) como AUSENTE automáticamente", vencidos.size());
     }
 
     @Transactional(readOnly = true)

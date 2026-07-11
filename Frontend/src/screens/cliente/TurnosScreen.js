@@ -37,6 +37,7 @@ const badgeColor = (estado) => {
     case 'ASISTIDO': return COLORS.success;
     case 'COMPLETADO': return COLORS.primary;
     case 'CANCELADO': return COLORS.textMuted;
+    case 'AUSENTE': return '#B45309';
     default: return COLORS.textMuted;
   }
 };
@@ -47,6 +48,7 @@ const badgeLabel = (estado) => {
     case 'ASISTIDO': return 'Asistido';
     case 'COMPLETADO': return 'Completado';
     case 'CANCELADO': return 'Cancelado';
+    case 'AUSENTE': return 'Ausente';
     default: return estado;
   }
 };
@@ -77,7 +79,7 @@ const ItemTurno = ({ turno, onCancelar }) => (
   </View>
 );
 
-const ESTADOS_HISTORIAL = ['ASISTIDO', 'COMPLETADO', 'CANCELADO'];
+const ESTADOS_HISTORIAL = ['ASISTIDO', 'COMPLETADO', 'CANCELADO', 'AUSENTE'];
 
 const TurnosScreen = ({ navigation }) => {
   const { usuario } = useAuth();

@@ -2,4 +2,4 @@
 
 package com.VeTurnos.backend.enums;
 
-public enum EstadoReserva { PENDIENTE, ASISTIDO, COMPLETADO, CANCELADO } 
+public enum EstadoReserva { PENDIENTE, ASISTIDO, COMPLETADO, CANCELADO, AUSENTE }
