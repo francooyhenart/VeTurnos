@@ -1,9 +1,9 @@
 // VeterinarioAdminController.java
-package com.VeTurnos.backend.controller;
+package com.veturnos.backend.controller;
 
-import com.VeTurnos.backend.dto.VeterinarioRequest;
-import com.VeTurnos.backend.dto.VeterinarioResponse;
-import com.VeTurnos.backend.service.VeterinarioAdminService;
+import com.veturnos.backend.dto.VeterinarioRequest;
+import com.veturnos.backend.dto.VeterinarioResponse;
+import com.veturnos.backend.service.VeterinarioAdminService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

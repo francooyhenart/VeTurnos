@@ -1,12 +1,12 @@
-package com.VeTurnos.backend.controller;
+package com.veturnos.backend.controller;
 
-import com.VeTurnos.backend.dto.ReservaRequest;
-import com.VeTurnos.backend.dto.ReservaResponse;
-import com.VeTurnos.backend.dto.ObservacionesClinicasRequest;
-import com.VeTurnos.backend.dto.HistorialClinicoResponse;
-import com.VeTurnos.backend.service.ReservaService;
-import com.VeTurnos.backend.service.JwtTokenProvider;
-import com.VeTurnos.backend.service.RecargoConfirmacionRequeridaException;
+import com.veturnos.backend.dto.ReservaRequest;
+import com.veturnos.backend.dto.ReservaResponse;
+import com.veturnos.backend.dto.ObservacionesClinicasRequest;
+import com.veturnos.backend.dto.HistorialClinicoResponse;
+import com.veturnos.backend.service.ReservaService;
+import com.veturnos.backend.service.JwtTokenProvider;
+import com.veturnos.backend.service.RecargoConfirmacionRequeridaException;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -20,8 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/reservas")
-//me tiraba error esto
-//@CrossOrigin(origins = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.PATCH, RequestMethod.OPTIONS})
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.PATCH, RequestMethod.OPTIONS})
 public class ReservaController {
 
     private final ReservaService reservaService;
@@ -131,9 +130,11 @@ public class ReservaController {
     @GetMapping("/disponibilidad")
     public ResponseEntity<?> obtenerDisponibilidad(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
-            @RequestParam(required = false) Long sedeId) {
+            @RequestParam Long sedeId,
+            @RequestParam(required = false) Long veterinarioId) {
         try {
-            List<ReservaResponse> response = reservaService.obtenerDisponibilidad(fecha, sedeId);
+            // 🟢 Pasamos los 3 parámetros requeridos ahora por el ReservaService
+            List<ReservaResponse> response = reservaService.obtenerDisponibilidad(fecha, sedeId, veterinarioId);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();

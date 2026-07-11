@@ -1,5 +1,5 @@
 // Rol.java
-package com.VeTurnos.backend.enums;
+package com.veturnos.backend.enums;
 
 public enum Rol { 
     CLIENTE, 

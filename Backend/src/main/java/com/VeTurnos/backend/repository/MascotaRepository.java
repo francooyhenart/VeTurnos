@@ -1,8 +1,8 @@
 // MascotaRepository.java
 
-package com.VeTurnos.backend.repository;
+package com.veturnos.backend.repository;
 
-import com.VeTurnos.backend.model.Mascota;
+import com.veturnos.backend.model.Mascota;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

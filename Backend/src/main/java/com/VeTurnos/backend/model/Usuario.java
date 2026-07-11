@@ -1,8 +1,8 @@
 // Usuario.java
 
-package com.VeTurnos.backend.model;
+package com.veturnos.backend.model;
 
-import com.VeTurnos.backend.enums.Rol;
+import com.veturnos.backend.enums.Rol;
 import jakarta.persistence.*;
 
 @Entity

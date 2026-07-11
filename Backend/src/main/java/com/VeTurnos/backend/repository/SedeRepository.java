@@ -1,8 +1,8 @@
 // SedeRepository.java
 
-package com.VeTurnos.backend.repository;
+package com.veturnos.backend.repository;
 
-import com.VeTurnos.backend.model.Sede;
+import com.veturnos.backend.model.Sede;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SedeRepository extends JpaRepository<Sede, Long> {

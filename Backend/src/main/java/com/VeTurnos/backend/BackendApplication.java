@@ -1,4 +1,4 @@
-package com.VeTurnos.backend;
+package com.veturnos.backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,14 +1,14 @@
 // GestorVeterinarioController.java
 
-package com.VeTurnos.backend.controller;
+package com.veturnos.backend.controller;
 
-import com.VeTurnos.backend.dto.VeterinarioRequest;
-import com.VeTurnos.backend.dto.VeterinarioResponse;
-import com.VeTurnos.backend.dto.VeterinarioUpdateRequest;
-import com.VeTurnos.backend.dto.SedeResponse;
-import com.VeTurnos.backend.model.Veterinario;
-import com.VeTurnos.backend.model.Reserva;
-import com.VeTurnos.backend.service.GestorService;
+import com.veturnos.backend.dto.VeterinarioRequest;
+import com.veturnos.backend.dto.VeterinarioResponse;
+import com.veturnos.backend.dto.VeterinarioUpdateRequest;
+import com.veturnos.backend.dto.SedeResponse;
+import com.veturnos.backend.model.Veterinario;
+import com.veturnos.backend.model.Reserva;
+import com.veturnos.backend.service.GestorService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,15 +40,18 @@ public class GestorVeterinarioController {
     @PostMapping
     public ResponseEntity<?> crearVeterinario(@Valid @RequestBody VeterinarioRequest request) {
         try {
+            // 🟢 Pasamos horaInicio y horaFin que ahora viajan en el request
             Veterinario veterinario = gestorService.crearVeterinario(
-                request.getNombreCompleto(),
-                request.getDni(),
-                request.getTelefono(),
-                request.getEmail(),
-                request.getPassword(),
-                request.getMatricula(),
-                request.getEspecialidad(),
-                request.getSedeId()
+                    request.getNombreCompleto(),
+                    request.getDni(),
+                    request.getTelefono(),
+                    request.getEmail(),
+                    request.getPassword(),
+                    request.getMatricula(),
+                    request.getEspecialidad(),
+                    request.getSedeId(),
+                    request.getHoraInicio(),
+                    request.getHoraFin()
             );
             VeterinarioResponse response = convertirAResponse(veterinario);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -137,13 +140,15 @@ public class GestorVeterinarioController {
             @Valid @RequestBody VeterinarioUpdateRequest request) {
         try {
             Veterinario veterinario = gestorService.actualizarVeterinario(
-                id,
-                request.getNombreCompleto(),
-                request.getTelefono(),
-                request.getEspecialidad(),
-                request.getEmail(),
-                request.getMatricula(),
-                request.getSedeId()
+                    id,
+                    request.getNombreCompleto(),
+                    request.getTelefono(),
+                    request.getEspecialidad(),
+                    request.getEmail(),
+                    request.getMatricula(),
+                    request.getSedeId(),
+                    request.getHoraInicio(),
+                    request.getHoraFin()
             );
             VeterinarioResponse response = convertirAResponse(veterinario);
             return new ResponseEntity<>(response, HttpStatus.OK);
@@ -278,23 +283,26 @@ public class GestorVeterinarioController {
      */
     private VeterinarioResponse convertirAResponse(Veterinario veterinario) {
         SedeResponse sedeResponse = veterinario.getSede() != null
-            ? new SedeResponse(
+                ? new SedeResponse(
                 veterinario.getSede().getId(),
                 veterinario.getSede().getNombre(),
                 veterinario.getSede().getCalle(),
                 veterinario.getSede().getNumero(),
                 veterinario.getSede().getEntreCalles(),
                 veterinario.getSede().getDireccionCompleta())
-            : null;
+                : null;
 
+        // Usamos el constructor completo pasándole las propiedades de la entidad real
         return new VeterinarioResponse(
-            veterinario.getId(),
-            veterinario.getNombreCompleto(),
-            veterinario.getEmail(),
-            veterinario.getMatricula(),
-            veterinario.getEspecialidad(),
-            veterinario.getTelefono(),
-            sedeResponse
+                veterinario.getId(),
+                veterinario.getNombreCompleto(),
+                veterinario.getEmail(),
+                veterinario.getMatricula(),
+                veterinario.getEspecialidad(),
+                veterinario.getTelefono(),
+                sedeResponse,
+                veterinario.getHoraInicio(),
+                veterinario.getHoraFin()
         );
     }
 }

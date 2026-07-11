@@ -1,10 +1,10 @@
-// VeterinarioUpdateRequest.java
-package com.VeTurnos.backend.dto;
+package com.veturnos.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Email;
+import java.time.LocalTime;
 
-// DTO específico para PUT: a diferencia de VeterinarioRequest (creación),
-// los campos son opcionales para permitir actualizaciones parciales.
+// DTO específico para PUT: mapea correctamente todos los campos mutables, incluyendo la jornada laboral
 public class VeterinarioUpdateRequest {
 
     private String nombreCompleto;
@@ -16,8 +16,13 @@ public class VeterinarioUpdateRequest {
 
     private String matricula;
 
-    // Opcional: el Manager puede reasignar la sede del veterinario
     private Long sedeId;
+
+    @JsonFormat(pattern = "HH:mm:ss")
+    private LocalTime horaInicio;
+
+    @JsonFormat(pattern = "HH:mm:ss")
+    private LocalTime horaFin;
 
     public String getNombreCompleto() { return nombreCompleto; }
     public String getTelefono() { return telefono; }
@@ -25,4 +30,8 @@ public class VeterinarioUpdateRequest {
     public String getEmail() { return email; }
     public String getMatricula() { return matricula; }
     public Long getSedeId() { return sedeId; }
+    public LocalTime getHoraInicio() { return horaInicio; }
+    public void setHoraInicio(LocalTime horaInicio) { this.horaInicio = horaInicio; }
+    public LocalTime getHoraFin() { return horaFin; }
+    public void setHoraFin(LocalTime horaFin) { this.horaFin = horaFin; }
 }

@@ -1,5 +1,5 @@
 // ObservacionesClinicasRequest.java
-package com.VeTurnos.backend.dto;
+package com.veturnos.backend.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

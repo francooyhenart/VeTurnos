@@ -1,8 +1,8 @@
 // Cliente.java
 
-package com.VeTurnos.backend.model;
+package com.veturnos.backend.model;
 
-import com.VeTurnos.backend.enums.Rol;
+import com.veturnos.backend.enums.Rol;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,10 +10,10 @@ import java.util.List;
 @Entity
 @Table(name = "clientes")
 @PrimaryKeyJoinColumn(name = "usuario_id")
-public class Cliente extends Usuario {
+public class Cliente extends com.veturnos.backend.model.Usuario {
 
     @OneToMany(mappedBy = "dueño", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Mascota> mascotas = new ArrayList<>();
+    private List<com.veturnos.backend.model.Mascota> mascotas = new ArrayList<>();
 
     public Cliente() {
         super();
@@ -23,11 +23,11 @@ public class Cliente extends Usuario {
         super(nombreCompleto, dni, telefono, email, password, Rol.CLIENTE);
     }
 
-    public List<Mascota> getMascotas() {
+    public List<com.veturnos.backend.model.Mascota> getMascotas() {
         return mascotas;
     }
 
-    public void agregarMascota(Mascota mascota) {
+    public void agregarMascota(com.veturnos.backend.model.Mascota mascota) {
         this.mascotas.add(mascota);
         mascota.setDueño(this);
     }

@@ -1,13 +1,13 @@
 // GestorService.java
 
-package com.VeTurnos.backend.service;
+package com.veturnos.backend.service;
 
-import com.VeTurnos.backend.model.Veterinario;
-import com.VeTurnos.backend.model.Reserva;
-import com.VeTurnos.backend.model.Sede;
-import com.VeTurnos.backend.repository.VeterinarioRepository;
-import com.VeTurnos.backend.repository.ReservaRepository;
-import com.VeTurnos.backend.repository.SedeRepository;
+import com.veturnos.backend.model.Veterinario;
+import com.veturnos.backend.model.Reserva;
+import com.veturnos.backend.model.Sede;
+import com.veturnos.backend.repository.VeterinarioRepository;
+import com.veturnos.backend.repository.ReservaRepository;
+import com.veturnos.backend.repository.SedeRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
@@ -32,8 +32,9 @@ public class GestorService {
      * CREATE - Crear nuevo veterinario
      */
     public Veterinario crearVeterinario(String nombreCompleto, String dni, String telefono,
-                                         String email, String password, String matricula,
-                                         String especialidad, Long sedeId) {
+                                        String email, String password, String matricula,
+                                        String especialidad, Long sedeId,
+                                        java.time.LocalTime horaInicio, java.time.LocalTime horaFin) { // 🟢 Agregados al método
         // Validar que email sea único
         if (veterinarioRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("El email ya está registrado en el sistema");
@@ -44,20 +45,26 @@ public class GestorService {
             throw new IllegalArgumentException("La matrícula profesional ya existe");
         }
 
+        // Usamos las horas reales que vienen del controlador, si son null metemos fallback seguro
+        java.time.LocalTime inicio = horaInicio != null ? horaInicio : java.time.LocalTime.of(9, 0);
+        java.time.LocalTime fin = horaFin != null ? horaFin : java.time.LocalTime.of(18, 0);
+
         Veterinario veterinario = new Veterinario(
-            nombreCompleto,
-            dni,
-            telefono,
-            email,
-            password,
-            matricula,
-            especialidad,
-            false  // No es administrador por defecto
+                nombreCompleto,
+                dni,
+                telefono,
+                email,
+                password,
+                matricula,
+                especialidad,
+                false,
+                inicio,
+                fin
         );
 
         if (sedeId != null) {
             Sede sede = sedeRepository.findById(sedeId)
-                .orElseThrow(() -> new IllegalArgumentException("Sede no encontrada con ID: " + sedeId));
+                    .orElseThrow(() -> new IllegalArgumentException("Sede no encontrada con ID: " + sedeId));
             veterinario.setSede(sede);
         }
 
@@ -96,7 +103,8 @@ public class GestorService {
      */
     public Veterinario actualizarVeterinario(Long id, String nombreCompleto, String telefono,
                                              String especialidad, String email, String matricula,
-                                             Long sedeId) {
+                                             Long sedeId,
+                                             java.time.LocalTime horaInicio, java.time.LocalTime horaFin) { // 🟢 Parámetros de hora sumados
         Veterinario veterinario = obtenerVeterinarioPorId(id);
 
         if (nombreCompleto != null && !nombreCompleto.trim().isEmpty()) {
@@ -127,8 +135,16 @@ public class GestorService {
 
         if (sedeId != null && (veterinario.getSede() == null || !sedeId.equals(veterinario.getSede().getId()))) {
             Sede sede = sedeRepository.findById(sedeId)
-                .orElseThrow(() -> new IllegalArgumentException("Sede no encontrada con ID: " + sedeId));
+                    .orElseThrow(() -> new IllegalArgumentException("Sede no encontrada con ID: " + sedeId));
             veterinario.setSede(sede);
+        }
+
+        // 🟢 PERSISTENCIA DE HORAS RESOLVIVIDA:
+        if (horaInicio != null) {
+            veterinario.setHoraInicio(horaInicio);
+        }
+        if (horaFin != null) {
+            veterinario.setHoraFin(horaFin);
         }
 
         return veterinarioRepository.save(veterinario);

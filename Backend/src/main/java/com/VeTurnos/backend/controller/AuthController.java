@@ -1,10 +1,10 @@
-package com.VeTurnos.backend.controller;
+package com.veturnos.backend.controller;
 
-import com.VeTurnos.backend.dto.AuthResponse;
-import com.VeTurnos.backend.dto.GestorRegistroRequest;
-import com.VeTurnos.backend.dto.LoginRequest;
-import com.VeTurnos.backend.dto.RegistroRequest;
-import com.VeTurnos.backend.service.AuthService;
+import com.veturnos.backend.dto.AuthResponse;
+import com.veturnos.backend.dto.GestorRegistroRequest;
+import com.veturnos.backend.dto.LoginRequest;
+import com.veturnos.backend.dto.RegistroRequest;
+import com.veturnos.backend.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

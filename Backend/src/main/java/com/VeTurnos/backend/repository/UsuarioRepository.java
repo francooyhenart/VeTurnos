@@ -1,8 +1,8 @@
 // UsuarioRepository.java
 
-package com.VeTurnos.backend.repository;
+package com.veturnos.backend.repository;
 
-import com.VeTurnos.backend.model.Usuario;
+import com.veturnos.backend.model.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 

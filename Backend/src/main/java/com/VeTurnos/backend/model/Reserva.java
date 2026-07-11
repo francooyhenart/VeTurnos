@@ -1,6 +1,7 @@
-package com.VeTurnos.backend.model;
+package com.veturnos.backend.model;
 
-import com.VeTurnos.backend.enums.EstadoReserva;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.veturnos.backend.enums.EstadoReserva;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -23,10 +24,11 @@ public class Reserva {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "veterinario_id", nullable = true)
-    @JsonIgnore // <-- ESTA ANOTACIÓN EVITA EL BUCLE INFINITO
+    @JsonIgnore
     private Veterinario veterinario;
 
     @Column(nullable = false)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaHora;
 
     @Enumerated(EnumType.STRING)
@@ -91,8 +93,9 @@ public class Reserva {
         if (this.estado != EstadoReserva.PENDIENTE) {
             throw new IllegalStateException("Solo se pueden marcar como ausentes los turnos que seguían pendientes");
         }
-        if (LocalDateTime.now().isBefore(this.fechaHora)) {
-            throw new IllegalStateException("No se puede marcar como ausente un turno que todavía no comenzó");
+        LocalDateTime finTurno = this.fechaHora.plusMinutes(this.duracionMinutos != null ? this.duracionMinutos : 30);
+            if (LocalDateTime.now().isBefore(finTurno)) {
+                throw new IllegalStateException("No se puede marcar como ausente un turno que todavía no finalizó");
         }
         this.estado = EstadoReserva.AUSENTE;
     }

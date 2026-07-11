@@ -1,8 +1,8 @@
 // VeterinarioRepository.java
 
-package com.VeTurnos.backend.repository;
+package com.veturnos.backend.repository;
 
-import com.VeTurnos.backend.model.Veterinario;
+import com.veturnos.backend.model.Veterinario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
