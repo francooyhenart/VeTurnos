@@ -82,4 +82,11 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     @Query("SELECT COUNT(r) FROM Reserva r WHERE r.estado IN :estados")
     long contarTurnosTotal(@Param("estados") List<EstadoReserva> estados);
+
+    //Busca turnos PENDIENTES que arranquen en un rango de tiempo específico (sirve para enganchar la ventana de 24hs y 3hs)
+    List<Reserva> findByEstadoAndFechaHoraBetween(EstadoReserva estado, LocalDateTime inicio, LocalDateTime fin);
+
+    //Verifica si ya le creamos una notificación de ese estilo al cliente para evitar duplicados
+    @Query("SELECT COUNT(n) > 0 FROM Notificacion n WHERE n.usuario.id = :usuarioId AND n.titulo = :titulo AND n.mensaje LIKE %:mascotaNome%")
+    boolean existeNotificacionDuplicada(@Param("usuarioId") Long usuarioId, @Param("titulo") String titulo, @Param("mascotaNome") String mascotaNome);
 }

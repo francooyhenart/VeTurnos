@@ -129,7 +129,7 @@ public class ReservaService {
     public void marcarAusentesAutomaticamente() {
         log.info(">>> JOB marcarAusentesAutomaticamente EJECUTADO a las {}", LocalDateTime.now());
 
-        List<Reserva> vencidos = reservaRepository.findVencidosPorEstado(
+        List<Reserva> vencidos = reservaRepository.findByEstadoAndFechaHoraBefore(
                 EstadoReserva.PENDIENTE, LocalDateTime.now());
 
         log.info(">>> Encontrados {} turno(s) vencidos", vencidos.size());
