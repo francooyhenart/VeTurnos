@@ -1,6 +1,7 @@
-package com.VeTurnos.backend.model;
+package com.veturnos.backend.model;
 
-import com.VeTurnos.backend.enums.EstadoReserva;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.veturnos.backend.enums.EstadoReserva;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -23,10 +24,11 @@ public class Reserva {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "veterinario_id", nullable = true)
-    @JsonIgnore // <-- ESTA ANOTACIÓN EVITA EL BUCLE INFINITO
+    @JsonIgnore
     private Veterinario veterinario;
 
     @Column(nullable = false)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaHora;
 
     @Enumerated(EnumType.STRING)

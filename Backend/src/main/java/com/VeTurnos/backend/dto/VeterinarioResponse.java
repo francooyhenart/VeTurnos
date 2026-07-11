@@ -1,5 +1,6 @@
-// VeterinarioResponse.java
-package com.VeTurnos.backend.dto;
+package com.veturnos.backend.dto;
+
+import java.time.LocalTime;
 
 public class VeterinarioResponse {
 
@@ -10,10 +11,13 @@ public class VeterinarioResponse {
     private String especialidad;
     private String telefono;
     private SedeResponse sede;
+    private LocalTime horaInicio;
+    private LocalTime horaFin;
 
+    // Constructor Principal (El nuevo de 9 parámetros)
     public VeterinarioResponse(Long id, String nombreCompleto, String email,
                                String matricula, String especialidad, String telefono,
-                               SedeResponse sede) {
+                               SedeResponse sede, LocalTime horaInicio, LocalTime horaFin) {
         this.id = id;
         this.nombreCompleto = nombreCompleto;
         this.email = email;
@@ -21,6 +25,17 @@ public class VeterinarioResponse {
         this.especialidad = especialidad;
         this.telefono = telefono;
         this.sede = sede;
+        this.horaInicio = horaInicio;
+        this.horaFin = horaFin;
+    }
+
+    // 🟢 CONSTRUCTOR SOBRECARGADO (El viejo de 7 parámetros)
+    // Esto salva las llamadas viejas asignando la jornada estándar por defecto
+    public VeterinarioResponse(Long id, String nombreCompleto, String email,
+                               String matricula, String especialidad, String telefono,
+                               SedeResponse sede) {
+        this(id, nombreCompleto, email, matricula, especialidad, telefono, sede,
+                LocalTime.of(9, 0), LocalTime.of(18, 0));
     }
 
     // Getters
@@ -31,4 +46,6 @@ public class VeterinarioResponse {
     public String getEspecialidad() { return especialidad; }
     public String getTelefono() { return telefono; }
     public SedeResponse getSede() { return sede; }
-} 
+    public LocalTime getHoraInicio() { return horaInicio; }
+    public LocalTime getHoraFin() { return horaFin; }
+}

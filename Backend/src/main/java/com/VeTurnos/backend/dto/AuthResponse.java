@@ -1,5 +1,5 @@
 // AuthResponse.java
-package com.VeTurnos.backend.dto;
+package com.veturnos.backend.dto;
 
 public class AuthResponse {
     private Long id;

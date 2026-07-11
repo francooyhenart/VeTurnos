@@ -1,10 +1,10 @@
 // SedeService.java
 
-package com.VeTurnos.backend.service;
+package com.veturnos.backend.service;
 
-import com.VeTurnos.backend.model.Sede;
-import com.VeTurnos.backend.repository.ReservaRepository;
-import com.VeTurnos.backend.repository.SedeRepository;
+import com.veturnos.backend.model.Sede;
+import com.veturnos.backend.repository.ReservaRepository;
+import com.veturnos.backend.repository.SedeRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

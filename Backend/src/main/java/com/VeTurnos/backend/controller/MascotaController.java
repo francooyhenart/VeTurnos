@@ -1,8 +1,8 @@
-package com.VeTurnos.backend.controller;
+package com.veturnos.backend.controller;
 
-import com.VeTurnos.backend.dto.MascotaRequest;
-import com.VeTurnos.backend.dto.MascotaResponse;
-import com.VeTurnos.backend.service.MascotaService;
+import com.veturnos.backend.dto.MascotaRequest;
+import com.veturnos.backend.dto.MascotaResponse;
+import com.veturnos.backend.service.MascotaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

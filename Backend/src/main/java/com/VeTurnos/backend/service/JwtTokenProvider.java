@@ -1,4 +1,4 @@
-package com.VeTurnos.backend.service;
+package com.veturnos.backend.service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

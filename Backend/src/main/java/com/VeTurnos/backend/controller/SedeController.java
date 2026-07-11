@@ -1,11 +1,11 @@
 // SedeController.java
 
-package com.VeTurnos.backend.controller;
+package com.veturnos.backend.controller;
 
-import com.VeTurnos.backend.dto.SedeRequest;
-import com.VeTurnos.backend.dto.SedeResponse;
-import com.VeTurnos.backend.model.Sede;
-import com.VeTurnos.backend.service.SedeService;
+import com.veturnos.backend.dto.SedeRequest;
+import com.veturnos.backend.dto.SedeResponse;
+import com.veturnos.backend.model.Sede;
+import com.veturnos.backend.service.SedeService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

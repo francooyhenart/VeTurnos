@@ -1,6 +1,6 @@
 // Sede.java
 
-package com.VeTurnos.backend.model;
+package com.veturnos.backend.model;
 
 import jakarta.persistence.*;
 

@@ -1,5 +1,5 @@
 // MascotaResponse.java
-package com.VeTurnos.backend.dto;
+package com.veturnos.backend.dto;
 
 public class MascotaResponse {
     private Long id;

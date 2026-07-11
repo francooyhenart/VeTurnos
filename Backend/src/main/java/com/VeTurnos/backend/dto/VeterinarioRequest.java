@@ -1,10 +1,11 @@
-// VeterinarioRequest.java
-package com.VeTurnos.backend.dto;
+package com.veturnos.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat; // 🟢 1. AGREGAR ESTE IMPORT
 import jakarta.validation.constraints.*;
+import java.time.LocalTime;
 
 public class VeterinarioRequest {
-    
+
     @NotBlank(message = "El nombre completo es obligatorio")
     private String nombreCompleto;
 
@@ -27,11 +28,16 @@ public class VeterinarioRequest {
     private String matricula;
 
     private String especialidad;
-
-    // Opcional: el Manager puede asignar una sede al crear el veterinario
     private Long sedeId;
 
-    // Getters
+    @NotNull(message = "La hora de inicio de la jornada es obligatoria")
+    @JsonFormat(pattern = "HH:mm:ss")
+    private LocalTime horaInicio;
+
+    @NotNull(message = "La hora de fin de la jornada es obligatoria")
+    @JsonFormat(pattern = "HH:mm:ss")
+    private LocalTime horaFin;
+
     public String getNombreCompleto() { return nombreCompleto; }
     public String getDni() { return dni; }
     public String getTelefono() { return telefono; }
@@ -40,4 +46,6 @@ public class VeterinarioRequest {
     public String getMatricula() { return matricula; }
     public String getEspecialidad() { return especialidad; }
     public Long getSedeId() { return sedeId; }
+    public LocalTime getHoraInicio() { return horaInicio; }
+    public LocalTime getHoraFin() { return horaFin; }
 }

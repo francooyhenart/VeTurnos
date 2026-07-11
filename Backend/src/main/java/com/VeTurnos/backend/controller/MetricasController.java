@@ -1,8 +1,8 @@
 // MetricasController.java
-package com.VeTurnos.backend.controller;
+package com.veturnos.backend.controller;
 
-import com.VeTurnos.backend.dto.EstadisticasResponse;
-import com.VeTurnos.backend.service.ReservaService;
+import com.veturnos.backend.dto.EstadisticasResponse;
+import com.veturnos.backend.service.ReservaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

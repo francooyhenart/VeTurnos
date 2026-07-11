@@ -1,13 +1,13 @@
-package com.VeTurnos.backend.model;
+package com.veturnos.backend.model;
 
-import com.VeTurnos.backend.enums.Rol;
+import com.veturnos.backend.enums.Rol;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "gestores_veterinarios")
 @PrimaryKeyJoinColumn(name = "usuario_id")
-public class GestorVeterinarios extends com.VeTurnos.backend.model.Usuario {
+public class GestorVeterinarios extends com.veturnos.backend.model.Usuario {
 
     @Column(nullable = false)
     private String numeroEmpleado;

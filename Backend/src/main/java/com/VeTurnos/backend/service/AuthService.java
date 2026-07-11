@@ -1,15 +1,15 @@
-package com.VeTurnos.backend.service;
+package com.veturnos.backend.service;
 
-import com.VeTurnos.backend.dto.AuthResponse;
-import com.VeTurnos.backend.dto.GestorRegistroRequest;
-import com.VeTurnos.backend.dto.LoginRequest;
-import com.VeTurnos.backend.dto.RegistroRequest;
-import com.VeTurnos.backend.model.Cliente;
-import com.VeTurnos.backend.model.GestorVeterinarios;
-import com.VeTurnos.backend.model.Usuario;
-import com.VeTurnos.backend.repository.ClienteRepository;
-import com.VeTurnos.backend.repository.GestorVeterinarioRepository;
-import com.VeTurnos.backend.repository.UsuarioRepository;
+import com.veturnos.backend.dto.AuthResponse;
+import com.veturnos.backend.dto.GestorRegistroRequest;
+import com.veturnos.backend.dto.LoginRequest;
+import com.veturnos.backend.dto.RegistroRequest;
+import com.veturnos.backend.model.Cliente;
+import com.veturnos.backend.model.GestorVeterinarios;
+import com.veturnos.backend.model.Usuario;
+import com.veturnos.backend.repository.ClienteRepository;
+import com.veturnos.backend.repository.GestorVeterinarioRepository;
+import com.veturnos.backend.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +19,10 @@ public class AuthService {
     private final UsuarioRepository usuarioRepository;
     private final ClienteRepository clienteRepository;
     private final GestorVeterinarioRepository gestorVeterinarioRepository;
-    private final JwtTokenProvider jwtTokenProvider;
+    private final com.veturnos.backend.service.JwtTokenProvider jwtTokenProvider;
 
     public AuthService(UsuarioRepository usuarioRepository, ClienteRepository clienteRepository, 
-                      GestorVeterinarioRepository gestorVeterinarioRepository, JwtTokenProvider jwtTokenProvider) {
+                      GestorVeterinarioRepository gestorVeterinarioRepository, com.veturnos.backend.service.JwtTokenProvider jwtTokenProvider) {
         this.usuarioRepository = usuarioRepository;
         this.clienteRepository = clienteRepository;
         this.gestorVeterinarioRepository = gestorVeterinarioRepository;

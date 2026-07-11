@@ -1,7 +1,7 @@
-package com.VeTurnos.backend.controller;
+package com.veturnos.backend.controller;
 
-import com.VeTurnos.backend.model.Cliente;
-import com.VeTurnos.backend.repository.ClienteRepository;
+import com.veturnos.backend.model.Cliente;
+import com.veturnos.backend.repository.ClienteRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
