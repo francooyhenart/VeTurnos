@@ -127,19 +127,25 @@ public class ReservaService {
     @Scheduled(cron = "0 */15 * * * *")
     @Transactional
     public void marcarAusentesAutomaticamente() {
-        List<Reserva> vencidos = reservaRepository.findByEstadoAndFechaHoraBefore(
+        log.info(">>> JOB marcarAusentesAutomaticamente EJECUTADO a las {}", LocalDateTime.now());
+
+        List<Reserva> vencidos = reservaRepository.findVencidosPorEstado(
                 EstadoReserva.PENDIENTE, LocalDateTime.now());
+
+        log.info(">>> Encontrados {} turno(s) vencidos", vencidos.size());
 
         if (vencidos.isEmpty()) {
             return;
         }
 
         for (Reserva reserva : vencidos) {
+            log.info(">>> Marcando AUSENTE: id={}, fechaHora={}, estado={}",
+                    reserva.getId(), reserva.getFechaHora(), reserva.getEstado());
             reserva.marcarComoAusente();
         }
         reservaRepository.saveAll(vencidos);
 
-        log.info("Se marcaron {} turno(s) como AUSENTE automáticamente", vencidos.size());
+        log.info(">>> Se marcaron {} turno(s) como AUSENTE automáticamente", vencidos.size());
     }
 
     @Transactional(readOnly = true)

@@ -91,8 +91,9 @@ public class Reserva {
         if (this.estado != EstadoReserva.PENDIENTE) {
             throw new IllegalStateException("Solo se pueden marcar como ausentes los turnos que seguían pendientes");
         }
-        if (LocalDateTime.now().isBefore(this.fechaHora)) {
-            throw new IllegalStateException("No se puede marcar como ausente un turno que todavía no comenzó");
+        LocalDateTime finTurno = this.fechaHora.plusMinutes(this.duracionMinutos != null ? this.duracionMinutos : 30);
+            if (LocalDateTime.now().isBefore(finTurno)) {
+                throw new IllegalStateException("No se puede marcar como ausente un turno que todavía no finalizó");
         }
         this.estado = EstadoReserva.AUSENTE;
     }
