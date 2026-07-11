@@ -22,6 +22,7 @@ import DetalleMascotaScreen from '../screens/cliente/DetalleMascotaScreen';
 import TurnosScreen from '../screens/cliente/TurnosScreen';
 import ReservarTurnoScreen from '../screens/cliente/ReservarTurnoScreen';
 import PerfilModal from '../screens/cliente/PerfilModal';
+import NotificacionesModal from '../screens/cliente/NotificacionesModal';
 
 // Pantallas de admin/vet
 import AgendaAdminScreen from '../screens/admin/AgendaAdminScreen';
@@ -179,6 +180,11 @@ const Navegacion = () => {
             <Stack.Screen
               name="PerfilModal"
               component={PerfilModal}
+              options={{ presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="NotificacionesModal"
+              component={NotificacionesModal}
               options={{ presentation: 'modal' }}
             />
           </>
