@@ -1,9 +1,9 @@
-package com.veturnos.backend.repository;
+package com.VeTurnos.backend.repository;
 
-import com.veturnos.backend.dto.MetricaSedeDTO;
-import com.veturnos.backend.dto.MetricaVeterinarioDTO;
-import com.veturnos.backend.enums.EstadoReserva;
-import com.veturnos.backend.model.Reserva;
+import com.VeTurnos.backend.dto.MetricaSedeDTO;
+import com.VeTurnos.backend.dto.MetricaVeterinarioDTO;
+import com.VeTurnos.backend.enums.EstadoReserva;
+import com.VeTurnos.backend.model.Reserva;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -61,23 +61,29 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
             @Param("veterinarioId") Long veterinarioId
     );
 
-    List<Reserva> findByVeterinario(com.veturnos.backend.model.Veterinario veterinario);
+    List<Reserva> findByVeterinario(com.VeTurnos.backend.model.Veterinario veterinario);
 
     @Query("SELECT r FROM Reserva r WHERE r.veterinario.id = :veterinarioId ORDER BY r.fechaHora ASC")
     List<Reserva> findByVeterinarioId(@Param("veterinarioId") Long veterinarioId);
 
     List<Reserva> findByVeterinarioIdAndEstadoAndFechaHoraAfterOrderByFechaHoraAsc(Long veterinarioId, EstadoReserva estado, LocalDateTime ahora);
-    List<Reserva> findByEstadoAndFechaHoraBefore(EstadoReserva estado, LocalDateTime ahora);
+    @Query("SELECT r FROM Reserva r " +
+            "WHERE r.estado = :estado " +
+            "AND r.fechaHora + (r.duracionMinutos * 1 minute) < :ahora")
+   List<Reserva> findVencidosPorEstado(
+           @Param("estado") EstadoReserva estado,
+           @Param("ahora") LocalDateTime ahora
+    );
 
     @Query("SELECT COUNT(r) > 0 FROM Reserva r WHERE r.veterinario.sede.id = :sedeId")
     boolean existeReservaEnSede(@Param("sedeId") Long sedeId);
 
     List<Reserva> findByMascotaIdAndEstadoInOrderByFechaHoraAsc(Long mascotaId, List<EstadoReserva> estados);
 
-    @Query("SELECT new com.veturnos.backend.dto.MetricaSedeDTO(s.nombre, COUNT(r)) FROM Reserva r JOIN r.veterinario v JOIN v.sede s WHERE r.estado IN :estados GROUP BY s.nombre ORDER BY COUNT(r) DESC")
+    @Query("SELECT new com.VeTurnos.backend.dto.MetricaSedeDTO(s.nombre, COUNT(r)) FROM Reserva r JOIN r.veterinario v JOIN v.sede s WHERE r.estado IN :estados GROUP BY s.nombre ORDER BY COUNT(r) DESC")
     List<MetricaSedeDTO> contarTurnosPorSede(@Param("estados") List<EstadoReserva> estados);
 
-    @Query("SELECT new com.veturnos.backend.dto.MetricaVeterinarioDTO(v.nombreCompleto, COUNT(r)) FROM Reserva r JOIN r.veterinario v WHERE r.estado IN :estados GROUP BY v.nombreCompleto ORDER BY COUNT(r) DESC")
+    @Query("SELECT new com.VeTurnos.backend.dto.MetricaVeterinarioDTO(v.nombreCompleto, COUNT(r)) FROM Reserva r JOIN r.veterinario v WHERE r.estado IN :estados GROUP BY v.nombreCompleto ORDER BY COUNT(r) DESC")
     List<MetricaVeterinarioDTO> contarTurnosPorVeterinario(@Param("estados") List<EstadoReserva> estados);
 
     @Query("SELECT COUNT(r) FROM Reserva r WHERE r.estado IN :estados")

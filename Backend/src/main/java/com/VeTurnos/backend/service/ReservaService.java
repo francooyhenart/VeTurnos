@@ -1,20 +1,20 @@
-package com.veturnos.backend.service;
+package com.VeTurnos.backend.service;
 
-import com.veturnos.backend.dto.ReservaRequest;
-import com.veturnos.backend.dto.ReservaResponse;
-import com.veturnos.backend.dto.MetricaSedeDTO;
-import com.veturnos.backend.dto.MetricaVeterinarioDTO;
-import com.veturnos.backend.dto.EstadisticasResponse;
-import com.veturnos.backend.dto.HistorialClinicoResponse;
-import com.veturnos.backend.enums.EstadoReserva;
-import com.veturnos.backend.model.Cliente;
-import com.veturnos.backend.model.Mascota;
-import com.veturnos.backend.model.Reserva;
-import com.veturnos.backend.repository.ClienteRepository;
-import com.veturnos.backend.repository.MascotaRepository;
-import com.veturnos.backend.repository.ReservaRepository;
-import com.veturnos.backend.repository.VeterinarioRepository;
-import com.veturnos.backend.service.RecargoConfirmacionRequeridaException;
+import com.VeTurnos.backend.dto.ReservaRequest;
+import com.VeTurnos.backend.dto.ReservaResponse;
+import com.VeTurnos.backend.dto.MetricaSedeDTO;
+import com.VeTurnos.backend.dto.MetricaVeterinarioDTO;
+import com.VeTurnos.backend.dto.EstadisticasResponse;
+import com.VeTurnos.backend.dto.HistorialClinicoResponse;
+import com.VeTurnos.backend.enums.EstadoReserva;
+import com.VeTurnos.backend.model.Cliente;
+import com.VeTurnos.backend.model.Mascota;
+import com.VeTurnos.backend.model.Reserva;
+import com.VeTurnos.backend.repository.ClienteRepository;
+import com.VeTurnos.backend.repository.MascotaRepository;
+import com.VeTurnos.backend.repository.ReservaRepository;
+import com.VeTurnos.backend.repository.VeterinarioRepository;
+import com.VeTurnos.backend.service.RecargoConfirmacionRequeridaException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -129,7 +129,7 @@ public class ReservaService {
     public void marcarAusentesAutomaticamente() {
         log.info(">>> JOB marcarAusentesAutomaticamente EJECUTADO a las {}", LocalDateTime.now());
 
-        List<Reserva> vencidos = reservaRepository.findByEstadoAndFechaHoraBefore(
+        List<Reserva> vencidos = reservaRepository.findVencidosPorEstado(
                 EstadoReserva.PENDIENTE, LocalDateTime.now());
 
         log.info(">>> Encontrados {} turno(s) vencidos", vencidos.size());
